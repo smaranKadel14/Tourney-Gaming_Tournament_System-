@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 
 // my custom styling for login page
-import "../styles/Login.css";
+
 
 const Login = () => {
   // state for form inputs
