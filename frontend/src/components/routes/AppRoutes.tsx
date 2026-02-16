@@ -7,6 +7,7 @@ import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
 // import AdminHome from "../pages/admin/AdminHome";
 
 import ProtectedRoute from "../routes/ProtectedRoutes";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 
 export default function AppRoutes() {
   return (
@@ -38,15 +39,14 @@ export default function AppRoutes() {
           }
         />
 
-        {/*
         <Route
           path="/admin"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminHome />
+              <AdminDashboard />
             </ProtectedRoute>
           }
-        /> */}
+        /> 
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />

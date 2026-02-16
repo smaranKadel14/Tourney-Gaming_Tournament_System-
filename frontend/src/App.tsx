@@ -3,6 +3,7 @@ import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
 import PlayerHome from "./components/pages/player/PlayerHome";
 import OrganizerDashboard from "./components/pages/organizer/OrganizerDashboard";
+import AdminDashboard from "./components/pages/admin/AdminDashboard";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/player" element={<PlayerHome />} />
         <Route path="/organizer" element={<OrganizerDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );
