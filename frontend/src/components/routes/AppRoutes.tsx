@@ -3,7 +3,7 @@ import Login from "../auth/Login";
 import Signup from "../auth/Signup";
 
 import PlayerHome from "../pages/player/PlayerHome";
-// import OrganizerHome from "../pages/organizer/OrganizerHome";
+import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
 // import AdminHome from "../pages/admin/AdminHome";
 
 import ProtectedRoute from "../routes/ProtectedRoutes";
@@ -29,15 +29,16 @@ export default function AppRoutes() {
           }
         />
 
-        {/* <Route
+        <Route
           path="/organizer"
           element={
             <ProtectedRoute allowedRoles={["organizer"]}>
-              <OrganizerHome />
+              <OrganizerDashboard />
             </ProtectedRoute>
           }
         />
 
+        {/*
         <Route
           path="/admin"
           element={
