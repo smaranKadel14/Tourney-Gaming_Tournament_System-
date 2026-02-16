@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // importing pages
 import Login from "../auth/Login";
-
+import Signup from "../auth/Signup";
 
 /*
   AppRoutes handles all frontend navigation.
@@ -18,6 +18,7 @@ const AppRoutes = () => {
 
         {/* auth routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
       </Routes>
     </BrowserRouter>

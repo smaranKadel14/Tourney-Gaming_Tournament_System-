@@ -1,10 +1,9 @@
-/* basic reset for auth pages only */
-.auth-page * {
+/* Auth.css */
+* {
   box-sizing: border-box;
   font-family: "Segoe UI", sans-serif;
 }
 
-/* full screen background */
 .auth-page {
   width: 100vw;
   height: 100vh;
@@ -14,7 +13,7 @@
   justify-content: center;
 }
 
-/* card container */
+
 .auth-card {
   width: 380px;
   background: rgba(15, 23, 42, 0.95);
@@ -24,7 +23,11 @@
   color: #e5e7eb;
 }
 
-/* subtitle below heading */
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
 .subtitle {
   text-align: center;
   font-size: 14px;
@@ -32,7 +35,44 @@
   margin-bottom: 20px;
 }
 
-/* switch link under form */
+label {
+  font-size: 13px;
+  margin-top: 10px;
+  display: block;
+  color: #cbd5f5;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+  background: #020617;
+  color: white;
+}
+
+input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 10px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
 .switch {
   text-align: center;
   margin-top: 16px;
@@ -44,6 +84,22 @@
   text-decoration: none;
 }
 
-.switch a:hover {
-  text-decoration: underline;
+.role-switch {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
 }
+
+.role-switch button {
+  flex: 1;
+  background: #020617;
+  border: 1px solid #1e293b;
+}
+
+.role-switch .active {
+  background: #2563eb;
+}
+
+/* .role-switch button:hover {
+  background: #1d4ed8;
+} */
