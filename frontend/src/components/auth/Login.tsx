@@ -1,18 +1,39 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
+import { setAuthUser } from "../../utils/auth";
 
 const Login = () => {
+  const navigate = useNavigate(); // for page redirection after login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // basic validation
     if (!email || !password) {
       alert("All fields are required");
       return;
     }
-    console.log(email, password);
+
+    // temporary login logic (until backend auth is connected)
+    // if email contains "admin" -> admin
+    // if email contains "org" -> organizer
+    // else -> player
+    const role = email.includes("admin")
+      ? "admin"
+      : email.includes("org")
+      ? "organizer"
+      : "player";
+
+    // saving login session to localStorage
+    setAuthUser({ email, role });
+
+    // role based redirection
+    if (role === "admin") navigate("/admin");
+    else if (role === "organizer") navigate("/organizer");
+    else navigate("/player");
   };
 
   return (

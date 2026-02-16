@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
+import { setAuthUser } from "../../utils/auth";
 
 const Signup = () => {
-  const [role, setRole] = useState("player");
+  const navigate = useNavigate(); // for redirect after signup
+
+  const [role, setRole] = useState<"player" | "organizer">("player");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,15 +14,24 @@ const Signup = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // basic validation
     if (!name || !email || !password || !confirmPassword) {
       alert("All fields required");
       return;
     }
+
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    console.log({ role, name, email, password });
+
+    // temporary signup session save (backend will be added later)
+    setAuthUser({ email, role });
+
+    // redirect based on selected role
+    if (role === "organizer") navigate("/organizer");
+    else navigate("/player");
   };
 
   return (

@@ -1,28 +1,55 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
-// importing pages
 import Login from "../auth/Login";
 import Signup from "../auth/Signup";
 
-/*
-  AppRoutes handles all frontend navigation.
-  Keeping routes separated makes the project cleaner and easier to scale later.
-*/
+import PlayerHome from "../pages/player/PlayerHome";
+// import OrganizerHome from "../pages/organizer/OrganizerHome";
+// import AdminHome from "../pages/admin/AdminHome";
 
-const AppRoutes = () => {
+import ProtectedRoute from "../routes/ProtectedRoutes";
+
+export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* default route -> login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* default */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* auth routes */}
+        {/* public */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
+        {/* protected */}
+        <Route
+          path="/player"
+          element={
+            <ProtectedRoute allowedRoles={["player"]}>
+              <PlayerHome />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* <Route
+          path="/organizer"
+          element={
+            <ProtectedRoute allowedRoles={["organizer"]}>
+              <OrganizerHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminHome />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
-};
-
-export default AppRoutes;
+}
