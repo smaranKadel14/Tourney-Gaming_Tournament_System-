@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
+import { clearAuthUser } from "../../../utils/auth";
 import "./PlayerHome.css";
 import bg from "../../../assets/bg.png";
 
 export default function PlayerHome() {
+  const handleLogout = () => {
+    clearAuthUser();
+    window.location.href = '/login';
+  };
+
   // Dummy data (later from backend)
   const tournaments = [
     {
@@ -48,6 +54,9 @@ export default function PlayerHome() {
           </nav>
 
           <div className="ph__actions">
+            <button onClick={handleLogout} className="ph__logoutBtn">
+              Logout
+            </button>
             <span className="ph__lang">EN ▾</span>
           </div>
         </header>

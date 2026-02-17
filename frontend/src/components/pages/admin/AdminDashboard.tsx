@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./AdminDashboard.css";
+import { clearAuthUser } from "../../../utils/auth";
 
 type ActivityStatus = "Completed" | "Pending Review" | "Processing";
 
@@ -19,8 +20,14 @@ type ApprovalItem = {
 };
 
 const AdminDashboard = () => {
-  // I am keeping dummy data for now (backend integration later)
   const [search, setSearch] = useState("");
+
+  const handleLogout = () => {
+    clearAuthUser();
+    window.location.href = '/login';
+  };
+
+  // I am keeping dummy data for now (backend integration later)
 
   const stats = useMemo(
     () => [
@@ -104,7 +111,7 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="sidebar-bottom">
-          <button className="logout">
+          <button onClick={handleLogout} className="logout">
             <span className="nav-ic">⟵</span> Logout
           </button>
         </div>

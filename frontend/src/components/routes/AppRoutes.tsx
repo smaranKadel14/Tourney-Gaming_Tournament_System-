@@ -1,56 +1,58 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Login from "../auth/Login";
 import Signup from "../auth/Signup";
 
 import PlayerHome from "../pages/player/PlayerHome";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
-// import AdminHome from "../pages/admin/AdminHome";
-
-import ProtectedRoute from "../routes/ProtectedRoutes";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+
+import ProtectedRoute from "./ProtectedRoutes";
+import PublicOnlyRoute from "./PublicOnlyRoutes";
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* default */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <Routes>
+      {/* Public routes - only when not logged in */}
+      <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+      <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
 
-        {/* public */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+      {/* Protected routes - only when logged in with correct role */}
+      <Route
+        path="/player"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <PlayerHome />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/organizer"
+        element={
+          <ProtectedRoute allowedRoles={["organizer"]}>
+            <OrganizerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* protected */}
-        <Route
-          path="/player"
-          element={
-            <ProtectedRoute allowedRoles={["player"]}>
-              <PlayerHome />
-            </ProtectedRoute>
-          }
-        />
+      {/* Default route - redirect based on auth state */}
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
 
-        <Route
-          path="/organizer"
-          element={
-            <ProtectedRoute allowedRoles={["organizer"]}>
-              <OrganizerDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        /> 
-
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
+      {/* 404 route - redirect to login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }

@@ -1,5 +1,6 @@
 import "./OrganizerDashboard.css";
 import { useMemo, useState } from "react";
+import { clearAuthUser } from "../../../utils/auth";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -14,6 +15,11 @@ type TournamentRow = {
 
 const OrganizerDashboard = () => {
   const [search, setSearch] = useState("");
+
+  const handleLogout = () => {
+    clearAuthUser();
+    window.location.href = '/login';
+  };
 
   // Dummy data (later: from backend)
   const tournaments: TournamentRow[] = useMemo(
@@ -97,7 +103,7 @@ const OrganizerDashboard = () => {
             </div>
           </div>
 
-          <button className="od__logout">
+          <button onClick={handleLogout} className="od__logout">
             <span className="od__icon">⎋</span> Logout
           </button>
         </div>

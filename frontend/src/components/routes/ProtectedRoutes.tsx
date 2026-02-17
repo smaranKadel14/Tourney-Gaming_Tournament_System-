@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { getAuthUser, type Role } from "../../utils/auth";
+import { getAuthUser, roleHomePath, type Role } from "../../utils/auth";
 
 type Props = {
   allowedRoles: Role[];
@@ -12,10 +12,11 @@ export default function ProtectedRoute({ allowedRoles, children }: Props) {
   // if not logged in, send to login
   if (!user) return <Navigate to="/login" replace />;
 
-  // if logged in but role is not allowed
+  // if logged in but role not allowed, send to their dashboard
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={roleHomePath(user.role)} replace />;
   }
 
+  // otherwise, render children
   return <>{children}</>;
 }
