@@ -1,37 +1,73 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
-import { setAuthUser } from "../../utils/auth";
+import { api } from "../../lib/api";
+import { saveAuth, roleHomePath } from "../../utils/auth";
+
+type RegisterResponse = {
+  token: string;
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: "player" | "organizer" | "admin";
+  };
+};
 
 const Signup = () => {
-  const navigate = useNavigate(); // for redirect after signup
+  const navigate = useNavigate();
 
+  // I am keeping role selection (player/organizer)
   const [role, setRole] = useState<"player" | "organizer">("player");
+
+  // I am keeping input states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // I am keeping loading + error for feedback
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    // basic validation
     if (!name || !email || !password || !confirmPassword) {
-      alert("All fields required");
+      setError("All fields are required");
       return;
     }
-
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
-    // temporary signup session save (backend will be added later)
-    setAuthUser({ email, role });
+    try {
+      setLoading(true);
 
-    // redirect based on selected role
-    if (role === "organizer") navigate("/organizer");
-    else navigate("/player");
+      // Calling backend register API
+      const res = await api.post<RegisterResponse>("/auth/register", {
+        fullName: name,
+        email,
+        password,
+        role,
+      });
+
+      // Saving auth
+      saveAuth(res.data.token, res.data.user);
+
+      // Redirect based on role
+      navigate(roleHomePath(res.data.user.role));
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,6 +75,8 @@ const Signup = () => {
       <div className="auth-card">
         <h2>Create Account</h2>
         <p className="subtitle">Join the ultimate tournament platform</p>
+
+        {error && <div className="auth-error">{error}</div>}
 
         <div className="role-switch">
           <button
@@ -77,7 +115,7 @@ const Signup = () => {
           <label>Password</label>
           <input
             type="password"
-            placeholder="At least 8 characters"
+            placeholder="At least 6 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -90,7 +128,9 @@ const Signup = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
 
-          <button type="submit">Create Account</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Account"}
+          </button>
         </form>
 
         <p className="switch">
