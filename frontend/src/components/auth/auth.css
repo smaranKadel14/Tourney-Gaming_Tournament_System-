@@ -100,6 +100,16 @@ button:hover {
   background: #2563eb;
 }
 
+.auth-error{
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fecaca;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 10px 0 12px;
+}
+
 /* .role-switch button:hover {
   background: #1d4ed8;
 } */
