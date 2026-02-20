@@ -5,6 +5,7 @@ import Signup from "../auth/Signup";
 
 import PlayerHome from "../pages/player/PlayerHome";
 import Tournaments from "../pages/player/Tournaments";
+import News from "../pages/player/News";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 
@@ -33,6 +34,15 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["player"]}>
             <Tournaments />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/player/news"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <News />
           </ProtectedRoute>
         }
       />

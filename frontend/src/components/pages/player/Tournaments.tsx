@@ -8,7 +8,6 @@ import codImg from "../../../assets/Tournaments/COD.png";
 import valImg from "../../../assets/Tournaments/VAL.png";
 import csImg from "../../../assets/Tournaments/CS.png";
 
-// Hardcoded for aesthetic purposes based on Figma
 const GAMES = [
   { id: 1, name: "LEAGUE OF LEGENDS", imgUrl: lolImg },
   { id: 2, name: "CALL OF DUTY", imgUrl: codImg },
