@@ -18,7 +18,7 @@ export default function PlayerNavbar() {
         <Link to="/player" className={location.pathname === "/player" ? "active" : ""}>Home</Link>
         <Link to="/player/tournaments" className={location.pathname === "/player/tournaments" ? "active" : ""}>Tournaments</Link>
         <Link to="/player/news" className={location.pathname === "/player/news" ? "active" : ""}>News</Link>
-        <a href="#contact">Contact</a>
+        <Link to="/player/contact" className={location.pathname === "/player/contact" ? "active" : ""}>Contact</Link>
       </nav>
 
       <div className="ph__actions">
