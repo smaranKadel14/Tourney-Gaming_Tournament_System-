@@ -1,7 +1,10 @@
+import { Link, useLocation } from "react-router-dom";
 import { clearAuthUser } from "../../../utils/auth";
 import "./PlayerNavbar.css";
 
 export default function PlayerNavbar() {
+  const location = useLocation();
+
   const handleLogout = () => {
     clearAuthUser();
     window.location.href = '/login';
@@ -12,8 +15,8 @@ export default function PlayerNavbar() {
       <div className="ph__logo">LOGO</div>
 
       <nav className="ph__links">
-        <a href="#home" className="active">Home</a>
-        <a href="#tournaments">Tournaments</a>
+        <Link to="/player" className={location.pathname === "/player" ? "active" : ""}>Home</Link>
+        <Link to="/player/tournaments" className={location.pathname === "/player/tournaments" ? "active" : ""}>Tournaments</Link>
         <a href="#news">News</a>
         <a href="#contact">Contact</a>
       </nav>
