@@ -1,14 +1,9 @@
 import { Link } from "react-router-dom";
-import { clearAuthUser } from "../../../utils/auth";
 import "./PlayerHome.css";
 import bg from "../../../assets/bg.png";
+import PlayerNavbar from "./PlayerNavbar";
 
 export default function PlayerHome() {
-  const handleLogout = () => {
-    clearAuthUser();
-    window.location.href = '/login';
-  };
-
   // Dummy data (later from backend)
   const tournaments = [
     {
@@ -42,24 +37,7 @@ export default function PlayerHome() {
       <div className="ph__overlay" />
 
       <div className="ph__wrap">
-        {/* NAVBAR */}
-        <header className="ph__nav">
-          <div className="ph__logo">LOGO</div>
-
-          <nav className="ph__links">
-            <a href="#home" className="active">Home</a>
-            <a href="#tournaments">Tournaments</a>
-            <a href="#news">News</a>
-            <a href="#contact">Contact</a>
-          </nav>
-
-          <div className="ph__actions">
-            <button onClick={handleLogout} className="ph__logoutBtn">
-              Logout
-            </button>
-            <span className="ph__lang">EN ▾</span>
-          </div>
-        </header>
+        <PlayerNavbar />
 
         {/* HERO */}
         <section className="ph__hero" id="home">
