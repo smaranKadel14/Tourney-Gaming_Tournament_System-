@@ -1,13 +1,39 @@
+import { useState, useEffect } from "react";
+import { api } from "../../../lib/api";
 import PlayerNavbar from "./PlayerNavbar";
 import "./News.css";
 
 // Assets
 import bg from "../../../assets/bg.png";
-import newsImg from "../../../assets/news/News.png";
+import placeholderImg from "../../../assets/news/News.png";
+
+type NewsItem = {
+  _id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  imageUrl: string;
+  author: string;
+  publishedAt: string;
+};
 
 export default function News() {
-  // Creating an array of 4 items to simulate the list in the Figma design
-  const newsList = [1, 2, 3, 4];
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const response = await api.get('/news');
+        setNews(response.data);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
 
   return (
     <div className="pn-page">
@@ -22,24 +48,32 @@ export default function News() {
         <section className="pn-hero">
           <h1 className="pn-title">See News In Your Company</h1>
           <p className="pn-subtitle">
-            This is News.
-            <br />This is News.
+            Stay up to date with the latest patches
+            <br />and tournament results.
           </p>
         </section>
 
         {/* News Feed Section */}
         <section className="pn-feed">
           <div className="pn-feed-container">
-            {newsList.map((item) => (
-              <div key={item} className="pn-news-card" style={{ backgroundImage: `url(${newsImg})` }}>
-                <div className="pn-news-content">
-                  <h2 className="pn-news-headline">Start create your vision</h2>
-                  <p className="pn-news-text">
-                    This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News. This is News.
-                  </p>
+            {loading ? (
+              <p style={{ color: "white", textAlign: "center" }}>Loading news...</p>
+            ) : news.length === 0 ? (
+              <p style={{ color: "white", textAlign: "center" }}>No news found.</p>
+            ) : (
+              news.map((item) => (
+                <div 
+                  key={item._id} 
+                  className="pn-news-card" 
+                  style={{ backgroundImage: `url(${placeholderImg})` }}
+                >
+                  <div className="pn-news-content">
+                    <h2 className="pn-news-headline">{item.title}</h2>
+                    <p className="pn-news-text">{item.content}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 

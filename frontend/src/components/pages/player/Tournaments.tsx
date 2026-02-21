@@ -1,21 +1,45 @@
+import { useState, useEffect } from "react";
+import { api } from "../../../lib/api";
 import PlayerNavbar from "./PlayerNavbar";
 import "./Tournaments.css";
 
 // Assets
 import bg from "../../../assets/bg.png";
-import lolImg from "../../../assets/Tournaments/LOL.png";
-import codImg from "../../../assets/Tournaments/COD.png";
 import valImg from "../../../assets/Tournaments/VAL.png";
-import csImg from "../../../assets/Tournaments/CS.png";
 
-const GAMES = [
-  { id: 1, name: "LEAGUE OF LEGENDS", imgUrl: lolImg },
-  { id: 2, name: "CALL OF DUTY", imgUrl: codImg },
-  { id: 3, name: "VALORANT", imgUrl: valImg },
-  { id: 4, name: "CS:GO", imgUrl: csImg },
-];
+type GameInfo = {
+  _id: string;
+  title: string;
+  imageUrl: string;
+};
+
+type Tournament = {
+  _id: string;
+  title: string;
+  game: GameInfo;
+  description: string;
+  startDate: string;
+  prizePool: string;
+};
 
 export default function Tournaments() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const response = await api.get('/tournaments');
+        setTournaments(response.data);
+      } catch (error) {
+        console.error("Error fetching tournaments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTournaments();
+  }, []);
+
   return (
     <div className="pt-page">
       {/* Background with Purple Glow */}
@@ -29,30 +53,39 @@ export default function Tournaments() {
         <section className="pt-hero">
           <h1 className="pt-title">RELEASED <span>TOURNAMENTS</span></h1>
           <p className="pt-subtitle">
-            Lorem Ipsum Dolor Sit Amet, Consectetuer Adipiscing Elit. Itaque Earum Rerum Hic Tenetur A Sapiente Delectus, Ut Aut
-            <br />Reiciendis Voluptatibus Maiores Alias Consequatur Aut Perferendis Doloribus Asperiores Repellat.
+            Explore upcoming esports events and show
+            <br />the world what you can do.
           </p>
         </section>
 
         {/* Games Section */}
         <section className="pt-gamesbg">
           <div className="pt-games-container">
-            <h2 className="pt-section-title">PICK YOUR GAME</h2>
-            <p className="pt-section-subtitle">P I C K Y O U R G A M E</p>
+            <h2 className="pt-section-title">FEATURED EVENT</h2>
+            <p className="pt-section-subtitle">PICK YOUR TOURNAMENT</p>
 
-            <div className="pt-games-grid">
-              {GAMES.map((game) => (
-                <div key={game.id} className="pt-game-card">
-                  <div 
-                    className="pt-game-image" 
-                    style={{ backgroundImage: `url(${game.imgUrl})` }} 
-                  />
-                  <div className="pt-game-name-overlay">
-                    {game.name}
+            {loading ? (
+              <p style={{ color: "white", textAlign: "center" }}>Loading tournaments...</p>
+            ) : tournaments.length === 0 ? (
+              <p style={{ color: "white", textAlign: "center" }}>No upcoming tournaments found.</p>
+            ) : (
+              <div className="pt-games-grid">
+                {tournaments.map((tourney) => (
+                  <div key={tourney._id} className="pt-game-card">
+                    <div 
+                      className="pt-game-image" 
+                      // Fallback to local image in case URL is broken
+                      style={{ backgroundImage: `url(${valImg})` }} 
+                    />
+                    <div className="pt-game-name-overlay" style={{ fontSize: "16px", padding: "10px" }}>
+                      <span style={{ display: "block", fontSize: "12px", opacity: 0.8 }}>{tourney.game?.title || "Game"}</span>
+                      {tourney.title}
+                      <span style={{ display: "block", fontSize: "12px", color: "#a200ff", marginTop: "4px" }}>Prize: {tourney.prizePool}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
