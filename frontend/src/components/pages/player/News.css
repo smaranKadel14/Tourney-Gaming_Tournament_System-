@@ -118,7 +118,7 @@
     position: absolute;
     inset: 0;
     /* Darker on the left where text goes, fading out */
-    background: linear-gradient(90deg, rgba(14, 0, 31, 0.9) 0%, rgba(34, 0, 78, 0.6) 60%, transparent 100%);
+    background: linear-gradient(90deg, rgba(14, 0, 31, 0.8) 0%, rgba(34, 0, 78, 0.4) 60%, transparent 100%);
     z-index: 1;
 }
 
