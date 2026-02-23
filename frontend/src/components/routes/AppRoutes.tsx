@@ -7,6 +7,7 @@ import PlayerHome from "../pages/player/PlayerHome";
 import Tournaments from "../pages/player/Tournaments";
 import News from "../pages/player/News";
 import Contact from "../pages/player/Contact";
+import PlayerProfile from "../pages/player/PlayerProfile";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 
@@ -53,6 +54,15 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["player"]}>
             <Contact />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/player/profile"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <PlayerProfile />
           </ProtectedRoute>
         }
       />

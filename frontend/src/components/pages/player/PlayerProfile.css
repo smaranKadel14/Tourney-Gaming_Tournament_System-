@@ -1,0 +1,455 @@
+/* Player Profile (pp = player profile) */
+.pp-page {
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #e5e7eb;
+    font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* Background consistent with other pages */
+.pp-bg {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.02);
+    z-index: 0;
+}
+
+.pp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg,
+            rgba(34, 0, 78, 0.88) 0%,
+            rgba(14, 0, 31, 0.95) 100%);
+}
+
+.pp-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(162, 0, 255, 0.4), transparent 60%);
+}
+
+.pp-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center left, rgba(100, 0, 255, 0.25), transparent 50%);
+}
+
+.pp-wrap {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+}
+
+.pp-wrap .ph__nav {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pp-content {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-top: 50px;
+}
+
+/* 1. Header Section */
+.pp-header {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.pp-avatar-wrapper {
+    flex-shrink: 0;
+}
+
+.pp-avatar {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 4px solid rgba(162, 0, 255, 0.5);
+    background-size: cover;
+    background-position: center;
+    background-color: #1a0b2e;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(162, 0, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pp-avatar-placeholder {
+    font-size: 64px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 800;
+}
+
+.pp-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.pp-avatar:hover .pp-avatar-overlay {
+    opacity: 1;
+}
+
+.pp-btn-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pp-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.pp-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+.pp-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pp-username {
+    font-size: 36px;
+    font-weight: 800;
+    margin: 0;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.pp-email {
+    color: #94a3b8;
+    font-size: 15px;
+}
+
+.pp-bio {
+    color: #cbd5e1;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-top: 10px;
+}
+
+.pp-btn-edit {
+    align-self: flex-start;
+    margin-top: 15px;
+    background: rgba(162, 0, 255, 0.2);
+    border: 1px solid rgba(162, 0, 255, 0.5);
+    color: #ffffff;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pp-btn-edit:hover {
+    background: rgba(162, 0, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Edit Form */
+.pp-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.pp-edit-input,
+.pp-edit-textarea {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(162, 0, 255, 0.3);
+    color: #ffffff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.pp-edit-input:focus,
+.pp-edit-textarea:focus {
+    border-color: rgba(162, 0, 255, 0.8);
+    box-shadow: 0 0 10px rgba(162, 0, 255, 0.2);
+}
+
+.pp-edit-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.pp-edit-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.pp-btn-save,
+.pp-btn-cancel {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.pp-btn-save {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #34d399;
+}
+
+.pp-btn-save:hover {
+    background: rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.pp-btn-cancel {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.pp-btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+}
+
+/* 2. Stats Section */
+.pp-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.pp-stat-card {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.pp-stat-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(162, 0, 255, 0.4);
+}
+
+.pp-stat-value {
+    font-size: 42px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 5px;
+    text-shadow: 0 0 20px rgba(162, 0, 255, 0.4);
+}
+
+.pp-stat-label {
+    font-size: 14px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* 3. Grid for History & Achievements */
+.pp-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.pp-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(162, 0, 255, 0.3);
+}
+
+.pp-history {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.pp-table-container {
+    overflow-x: auto;
+}
+
+.pp-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pp-table th,
+.pp-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pp-table th {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pp-table td {
+    font-size: 15px;
+    color: #e2e8f0;
+}
+
+.pp-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pp-badge-win {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pp-badge-loss {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* 4. Achievements Section */
+.pp-achievements {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.pp-achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.pp-achievement-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.pp-achievement-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.pp-achievement-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pp-achievement-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    color: #cbd5e1;
+}
+
+/* Footer overrides */
+.pp-footer {
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 40px 0;
+    margin-top: 60px;
+}
+
+.pp-copyright {
+    font-size: 9px;
+    color: #64748b;
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .pp-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .pp-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px 20px;
+    }
+
+    .pp-btn-edit {
+        align-self: center;
+    }
+
+    .pp-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .pp-achievements-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

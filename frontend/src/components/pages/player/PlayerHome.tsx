@@ -1,10 +1,41 @@
+import { useState, useEffect } from "react";
+import { api } from "../../../lib/api";
 import "./PlayerHome.css";
 import bg from "../../../assets/bg.png";
 import gamerImg from "../../../assets/home/gamer.png";
-import codImg from "../../../assets/home/COD.png";
+import placeholderImg from "../../../assets/home/COD.png";
 import PlayerNavbar from "./PlayerNavbar";
 
+type GameInfo = {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  releaseDate: string;
+  developer: string;
+};
+
 export default function PlayerHome() {
+  const [featuredGame, setFeaturedGame] = useState<GameInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedGame = async () => {
+      try {
+        const response = await api.get('/games?featured=true');
+        // Get the first featured game, if any
+        if (response.data && response.data.length > 0) {
+          setFeaturedGame(response.data[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching featured game:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeaturedGame();
+  }, []);
+
   return (
     <div className="ph">
       {/* Background image */}
@@ -56,29 +87,38 @@ export default function PlayerHome() {
           <div className="ph__sectionHead">
             <h2>RELEASED <span>GAMES</span></h2>
             <p>
-              Lorem Ipsum Dolor Sit Amet, Consectetuer Adipiscing Elit. Itaque Earum Rerum Hic Tenetur A Sapiente Delectus, Ut Aut
-              <br/>Reiciendis Voluptatibus Maiores Alias Consequatur Aut Perferendis Doloribus Asperiores Repellat.
+              Explore our top featured games that are currently taking the esports world by storm.
             </p>
           </div>
 
           <div className="ph__featured-content">
-            <div className="ph__featured-left">
-              <img src={codImg} alt="Call of Duty" />
-            </div>
-            
-            <div className="ph__featured-right">
-              <h3>CALL OF DUTY</h3>
-              
-              <div className="ph__meta-list">
-                <p><strong>Tournament Info:</strong> August 8, 2028, 10pm, Lost Angeles</p>
-                <p><strong>Register:</strong> Until August 6, 2028, 8am</p>
-                <p><strong>Lorem Ipsum Dolor Sit Amet:</strong> Nulla Turpis Magna, Cursus Sit Amet</p>
-                <p><strong>Lorem Ipsum Dolor:</strong> Magna, Cursus Sit Amet</p>
-                <p><strong>Sit Amet:</strong> Cursus Sit Amet</p>
-              </div>
+            {loading ? (
+              <p style={{ color: "white", width: "100%", textAlign: "center" }}>Loading featured game...</p>
+            ) : featuredGame ? (
+              <>
+                <div className="ph__featured-left">
+                  {/* Using local asset as fallback if the URL is broken */}
+                  <img src={placeholderImg} alt={featuredGame.title} style={{ borderRadius: "10px" }} />
+                </div>
+                
+                <div className="ph__featured-right">
+                  <h3 style={{ textTransform: "uppercase" }}>{featuredGame.title}</h3>
+                  <p style={{ fontSize: "14px", color: "#cbd5e1", marginBottom: "20px", lineHeight: "1.6" }}>
+                    {featuredGame.description}
+                  </p>
+                  
+                  <div className="ph__meta-list">
+                    <p><strong>Release Date:</strong> {new Date(featuredGame.releaseDate).toLocaleDateString()}</p>
+                    <p><strong>Developer:</strong> {featuredGame.developer}</p>
+                    <p><strong>Status:</strong> Available Now</p>
+                  </div>
 
-              <button className="ph__btnPrimary">REGISTER NOW</button>
-            </div>
+                  <button className="ph__btnPrimary">VIEW TOURNAMENTS</button>
+                </div>
+              </>
+            ) : (
+              <p style={{ color: "white", width: "100%", textAlign: "center" }}>No featured games available right now.</p>
+            )}
           </div>
         </section>
 
