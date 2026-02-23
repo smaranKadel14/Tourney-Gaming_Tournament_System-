@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.routes";
 import gameRoutes from "./routes/game.routes";
 import tournamentRoutes from "./routes/tournament.routes";
 import newsRoutes from "./routes/news.routes";
+import userRoutes from "./routes/user.routes";
+import path from "path";
 
 dotenv.config();
 
@@ -25,6 +27,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/news", newsRoutes);
+app.use("/api/users", userRoutes);
+
+// Serve static files from the uploads directory
+const __dirname_resolved = path.resolve();
+app.use("/uploads", express.static(path.join(__dirname_resolved, "../uploads")));
 
 app.get("/", (req, res) => res.send("API running..."));
 

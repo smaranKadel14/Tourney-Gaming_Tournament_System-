@@ -181,6 +181,77 @@
     transform: translateY(-2px);
 }
 
+/* Edit Form */
+.pp-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.pp-edit-input,
+.pp-edit-textarea {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(162, 0, 255, 0.3);
+    color: #ffffff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.pp-edit-input:focus,
+.pp-edit-textarea:focus {
+    border-color: rgba(162, 0, 255, 0.8);
+    box-shadow: 0 0 10px rgba(162, 0, 255, 0.2);
+}
+
+.pp-edit-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.pp-edit-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.pp-btn-save,
+.pp-btn-cancel {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.pp-btn-save {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #34d399;
+}
+
+.pp-btn-save:hover {
+    background: rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.pp-btn-cancel {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.pp-btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+}
+
 /* 2. Stats Section */
 .pp-stats {
     display: grid;

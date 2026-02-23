@@ -1,25 +1,114 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import PlayerNavbar from "./PlayerNavbar";
+import { getToken } from "../../../utils/auth";
 import "./PlayerProfile.css";
 
 // Assets
 import bg from "../../../assets/bg.png";
-import defAvatar from "../../../assets/home/gamer.png"; // Reusing an asset for a dummy avatar
+import defAvatar from "../../../assets/home/gamer.png";
+
+interface UserProfile {
+  _id: string;
+  fullName: string;
+  email: string;
+  bio: string;
+  avatarUrl: string;
+}
 
 export default function PlayerProfile() {
-  const [avatar, setAvatar] = useState<string | null>(defAvatar);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: "", bio: "" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleRemoveAvatar = () => {
-    setAvatar(null);
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/users/profile", {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      setProfile(res.data);
+      setEditForm({ fullName: res.data.fullName, bio: res.data.bio || "" });
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      const res = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        { avatarUrl: "" },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      setProfile(res.data);
+    } catch (err) {
+      console.error("Failed to remove avatar", err);
+    }
   };
 
   const handleUploadAvatar = () => {
-    // In a real app this would open a file picker
-    alert("Upload functionality to be implemented in backend phase");
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      try {
+        await axios.post("http://localhost:5000/api/users/avatar", formData, {
+          headers: {
+             Authorization: `Bearer ${getToken()}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        // Refresh profile to get the newly generated avatar URL
+        fetchProfile();
+      } catch (err) {
+        console.error("Failed to upload avatar", err);
+        alert("Found an issue uploading the image.");
+      }
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const res = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        editForm,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      setProfile(res.data);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      alert("Failed to update profile.");
+    }
+  };
+
+  // Resolve avatar URL formatting 
+  const displayAvatar = profile?.avatarUrl 
+    ? `http://localhost:5000${profile.avatarUrl}` 
+    : defAvatar;
 
   return (
     <div className="pp-page">
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: "none" }} 
+        accept="image/jpeg, image/png, image/jpg, image/webp" 
+        onChange={handleFileChange} 
+      />
       {/* Background with Purple Glow */}
       <div className="pp-bg" style={{ backgroundImage: `url(${bg})` }} />
       <div className="pp-overlay" />
@@ -31,11 +120,10 @@ export default function PlayerProfile() {
           {/* 1. Profile Identity Header */}
           <section className="pp-header">
             <div className="pp-avatar-wrapper">
-              <div 
+                <div 
                 className="pp-avatar" 
-                style={{ backgroundImage: avatar ? `url(${avatar})` : 'none' }}
+                style={{ backgroundImage: `url(${displayAvatar})` }}
               >
-                {!avatar && <div className="pp-avatar-placeholder">?</div>}
                 
                 <div className="pp-avatar-overlay">
                   <button className="pp-btn-icon" onClick={handleUploadAvatar} title="Upload New">
@@ -43,7 +131,7 @@ export default function PlayerProfile() {
                       <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
                     </svg>
                   </button>
-                  {avatar && (
+                  {profile?.avatarUrl && (
                     <button className="pp-btn-icon pp-btn-danger" onClick={handleRemoveAvatar} title="Remove">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -55,12 +143,37 @@ export default function PlayerProfile() {
             </div>
 
             <div className="pp-identity">
-              <h1 className="pp-username">Xx_SniperKing_xX</h1>
-              <span className="pp-email">sniperking@example.com</span>
-              <p className="pp-bio">
-                Casual competitive player. Love battle royales and tactical shooters. Looking for a squad for the upcoming Summer Championship!
-              </p>
-              <button className="pp-btn-edit">Edit Profile</button>
+              {isEditing ? (
+                 <div className="pp-edit-form">
+                   <input 
+                     type="text" 
+                     className="pp-edit-input" 
+                     value={editForm.fullName} 
+                     onChange={e => setEditForm(prev => ({...prev, fullName: e.target.value}))}
+                     placeholder="Display Name"
+                   />
+                   <span className="pp-email">{profile?.email || "loading..."}</span>
+                   <textarea 
+                     className="pp-edit-textarea" 
+                     value={editForm.bio} 
+                     onChange={e => setEditForm(prev => ({...prev, bio: e.target.value}))}
+                     placeholder="Write a bio about yourself..."
+                   />
+                   <div className="pp-edit-actions">
+                     <button className="pp-btn-save" onClick={handleSaveProfile}>Save Changes</button>
+                     <button className="pp-btn-cancel" onClick={() => setIsEditing(false)}>Cancel</button>
+                   </div>
+                 </div>
+              ) : (
+                 <>
+                  <h1 className="pp-username">{profile?.fullName || "Loading..."}</h1>
+                  <span className="pp-email">{profile?.email || "loading..."}</span>
+                  <p className="pp-bio">
+                    {profile?.bio || "No bio added yet. Click 'Edit Profile' to write something about yourself!"}
+                  </p>
+                  <button className="pp-btn-edit" onClick={() => setIsEditing(true)}>Edit Profile</button>
+                 </>
+              )}
             </div>
           </section>
 
