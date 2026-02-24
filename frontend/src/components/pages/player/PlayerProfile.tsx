@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import PlayerNavbar from "./PlayerNavbar";
 import { getToken } from "../../../utils/auth";
+import ImageCropper from "../../common/ImageCropper";
 import "./PlayerProfile.css";
 
 // Assets
@@ -20,6 +21,7 @@ export default function PlayerProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ fullName: "", bio: "" });
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,24 +62,35 @@ export default function PlayerProfile() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const formData = new FormData();
-      formData.append("avatar", file);
-
-      try {
-        await axios.post("http://localhost:5000/api/users/avatar", formData, {
-          headers: {
-             Authorization: `Bearer ${getToken()}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        // Refresh profile to get the newly generated avatar URL
-        fetchProfile();
-      } catch (err) {
-        console.error("Failed to upload avatar", err);
-        alert("Found an issue uploading the image.");
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = ""; // Reset file input
     }
   };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    const formData = new FormData();
+    formData.append("avatar", croppedBlob, "avatar.jpg");
+
+    try {
+      await axios.post("http://localhost:5000/api/users/avatar", formData, {
+        headers: {
+           Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      fetchProfile();
+      setImageToCrop(null);
+    } catch (err) {
+      console.error("Failed to upload avatar", err);
+      alert("Found an issue uploading the image.");
+    }
+  };
+
+  const handleCropCancel = () => setImageToCrop(null);
 
   const handleSaveProfile = async () => {
     try {
@@ -284,6 +297,15 @@ export default function PlayerProfile() {
           </p>
         </footer>
       </div>
+
+      {/* Image Cropper Modal */}
+      {imageToCrop && (
+        <ImageCropper 
+          imageSrc={imageToCrop} 
+          onCropComplete={handleCropComplete} 
+          onCancel={handleCropCancel} 
+        />
+      )}
     </div>
   );
 }

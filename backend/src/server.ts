@@ -31,7 +31,7 @@ app.use("/api/users", userRoutes);
 
 // Serve static files from the uploads directory
 const __dirname_resolved = path.resolve();
-app.use("/uploads", express.static(path.join(__dirname_resolved, "../uploads")));
+app.use("/uploads", express.static(path.join(__dirname_resolved, "uploads")));
 
 app.get("/", (req, res) => res.send("API running..."));
 
