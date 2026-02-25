@@ -49,7 +49,7 @@ export default function PlayerHome() {
         {/* HERO SECTION */}
         <section className="ph__hero">
           <h1 className="ph__title">WEBSITE NAME</h1>
-          <p className="ph__subtitle">Lorem Ipsum Text</p>
+          <p className="ph__subtitle">Home Page</p>
 
           <div className="ph__hero-content">
             <div className="ph__hero-left">
@@ -58,24 +58,16 @@ export default function PlayerHome() {
             
             <div className="ph__hero-right">
               <div className="ph__hero-block">
-                <h2>Lorem Ipsum<br/>FGF Playoff</h2>
+                <h2>Hero Section<br/>FGF Playoff</h2>
                 <p>
-                  Lorem Ipsum Dolor Sit Amet, Consectetuer Adipiscing Elit. Duis Pulvinar. Donec Ipsum Massa, Ullamcorper In,
-                  Auctor Et, Scelerisque Sed, Est. Nulla Accumsan, Elit Sit Amet Varius Semper, Nulla Mauris Mollis Quam, Tempor
-                  Suscipit Diam Nulla Vel Leo. Vivamus Luctus Egestas Leo. Nullam Sit Amet Magna In Magna Gravida
-                  Vehicula. In Enim A Arcu Imperdiet Malesuada. Sed Elit Dui, Pellentesque A, Faucibus Vel, Interdum Nec, Diam.
-                  In Rutrum. Sed Ac Dolor Sit Amet Purus Malesuada Congue.
+                  This is content
                 </p>
               </div>
 
               <div className="ph__hero-block">
-                <h2>Lorem Ipsum<br/>FGF Playoff</h2>
+                <h2>Hero Section<br/>FGF Playoff</h2>
                 <p>
-                  Lorem Ipsum Dolor Sit Amet, Consectetuer Adipiscing Elit. Duis Pulvinar. Donec Ipsum Massa, Ullamcorper In,
-                  Auctor Et, Scelerisque Sed, Est. Nulla Accumsan, Elit Sit Amet Varius Semper, Nulla Mauris Mollis Quam, Tempor
-                  Suscipit Diam Nulla Vel Leo. Vivamus Luctus Egestas Leo. Nullam Sit Amet Magna In Magna Gravida
-                  Vehicula. In Enim A Arcu Imperdiet Malesuada. Sed Elit Dui, Pellentesque A, Faucibus Vel, Interdum Nec, Diam.
-                  In Rutrum. Sed Ac Dolor Sit Amet Purus Malesuada Congue.
+                  This is content
                 </p>
               </div>
             </div>

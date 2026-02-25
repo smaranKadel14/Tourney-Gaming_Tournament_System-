@@ -35,8 +35,7 @@ export default function Contact() {
                 </svg>
               </div>
               <div className="pc-info-text">
-                <p>500 Terry Francois St.</p>
-                <p>San Francisco, CA 94158</p>
+                <p>Nepal, Kathmandu</p>
               </div>
             </div>
 
