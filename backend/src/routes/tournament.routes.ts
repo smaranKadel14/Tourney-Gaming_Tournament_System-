@@ -3,11 +3,13 @@ import {
     getTournaments,
     getTournamentById,
     registerForTournament,
+    getOrganizerTournaments,
 } from "../controllers/tournament.controller";
-import { protect } from "../middleware/auth.middleware";
+import { protect, authorize } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
+router.get("/organizer/me", protect, authorize("organizer", "admin"), getOrganizerTournaments);
 router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
 router.post("/:id/register", protect, registerForTournament);

@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ITournament extends Document {
     title: string;
     game: mongoose.Types.ObjectId;
+    organizer: mongoose.Types.ObjectId;
     description: string;
     startDate: Date;
     endDate: Date;
@@ -27,6 +28,11 @@ const tournamentSchema = new Schema<ITournament>(
         game: {
             type: Schema.Types.ObjectId,
             ref: "Game",
+            required: true,
+        },
+        organizer: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
             required: true,
         },
         description: {

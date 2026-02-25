@@ -1,6 +1,6 @@
 import "./OrganizerDashboard.css";
-import { useMemo, useState } from "react";
-import { clearAuthUser } from "../../../utils/auth";
+import { useEffect, useState } from "react";
+import { clearAuthUser, getToken } from "../../../utils/auth";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -21,44 +21,43 @@ const OrganizerDashboard = () => {
     window.location.href = '/login';
   };
 
-  // Dummy data (later: from backend)
-  const tournaments: TournamentRow[] = useMemo(
-    () => [
-      {
-        id: "TR-8832",
-        name: "Neon City Showdown",
-        game: "Valorant",
-        date: "Oct 24, 2023",
-        status: "Live",
-        participants: "42",
-      },
-      {
-        id: "TR-9921",
-        name: "Apex Legends: Winter Cup",
-        game: "Apex Legends",
-        date: "Nov 02, 2023",
-        status: "Registrations Open",
-        participants: "120",
-      },
-      {
-        id: "TR-7712",
-        name: "Weekend Warriors",
-        game: "CS:GO",
-        date: "Oct 20, 2023",
-        status: "Completed",
-        participants: "64",
-      },
-      {
-        id: "TR-4402",
-        name: "Rocket League Pro Series",
-        game: "Rocket League",
-        date: "Nov 15, 2023",
-        status: "Draft",
-        participants: "—",
-      },
-    ],
-    []
-  );
+  const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+
+        const res = await fetch("http://localhost:5000/api/tournaments/organizer/me", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const formatted = data.map((t: any) => ({
+            id: t._id,
+            name: t.title,
+            game: t.game?.title || "Unknown Game",
+            date: new Date(t.startDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+            status: t.status === "completed" ? "Completed" 
+                  : t.status === "ongoing" ? "Live"
+                  : "Registrations Open",
+            participants: "—",
+          }));
+          setTournaments(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching tournaments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTournaments();
+  }, []);
 
   const filtered = tournaments.filter((t) => {
     const q = search.trim().toLowerCase();
@@ -149,8 +148,8 @@ const OrganizerDashboard = () => {
               </div>
               <div className="od__ghostIcon">🏆</div>
             </div>
-            <div className="od__statValue">12</div>
-            <div className="od__statChange od__statChange--up">↗ +2% this month</div>
+            <div className="od__statValue">{tournaments.length}</div>
+            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
           </div>
 
           <div className="od__statCard">
@@ -160,8 +159,8 @@ const OrganizerDashboard = () => {
               </div>
               <div className="od__ghostIcon">▶</div>
             </div>
-            <div className="od__statValue">3</div>
-            <div className="od__statChange od__statChange--up">↗ 1 starting today</div>
+            <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
+            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
           </div>
 
           <div className="od__statCard">
@@ -171,8 +170,8 @@ const OrganizerDashboard = () => {
               </div>
               <div className="od__ghostIcon">👥</div>
             </div>
-            <div className="od__statValue">1,250</div>
-            <div className="od__statChange od__statChange--up">↗ +15% vs last week</div>
+            <div className="od__statValue">0</div>
+            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
           </div>
         </section>
 
@@ -184,6 +183,9 @@ const OrganizerDashboard = () => {
           </div>
 
           <div className="od__tableWrap">
+            {loading ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
+            ) : (
             <table className="od__table">
               <thead>
                 <tr>
@@ -225,6 +227,7 @@ const OrganizerDashboard = () => {
                 )}
               </tbody>
             </table>
+            )}
           </div>
 
           <div className="od__tableFooter">

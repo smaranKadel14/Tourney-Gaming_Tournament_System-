@@ -105,3 +105,26 @@ export const registerForTournament = async (req: Request, res: Response): Promis
         res.status(500).json({ message: "Server error" });
     }
 };
+
+// @desc    Get tournaments for the logged in organizer
+// @route   GET /api/tournaments/organizer/me
+// @access  Private (Organizer/Admin)
+export const getOrganizerTournaments = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const organizerId = (req as any).user?.id;
+
+        if (!organizerId) {
+            res.status(401).json({ message: "Not authorized" });
+            return;
+        }
+
+        const tournaments = await Tournament.find({ organizer: organizerId })
+            .populate("game", "title imageUrl")
+            .sort({ startDate: 1 });
+
+        res.json(tournaments);
+    } catch (error) {
+        console.error("Error fetching organizer tournaments:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
