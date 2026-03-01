@@ -4,6 +4,9 @@ export interface IRegistration extends Document {
     user: mongoose.Types.ObjectId;
     tournament: mongoose.Types.ObjectId;
     status: "pending" | "confirmed" | "cancelled" | "rejected";
+    paymentStatus: "pending" | "completed" | "failed";
+    paymentMethod: string;
+    transactionId?: string;
     registeredAt: Date;
     updatedAt: Date;
 }
@@ -24,6 +27,18 @@ const registrationSchema = new Schema<IRegistration>(
             type: String,
             enum: ["pending", "confirmed", "cancelled", "rejected"],
             default: "pending",
+        },
+        paymentStatus: {
+            type: String,
+            enum: ["pending", "completed", "failed"],
+            default: "pending",
+        },
+        paymentMethod: {
+            type: String,
+            default: "esewa",
+        },
+        transactionId: {
+            type: String,
         },
         registeredAt: {
             type: Date,

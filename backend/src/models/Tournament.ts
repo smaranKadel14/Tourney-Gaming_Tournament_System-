@@ -11,6 +11,7 @@ export interface ITournament extends Document {
     registrationDeadline: Date;
     prizePool: string;
     rules: string;
+    registrationFee: number;
     maxParticipants: number;
     imageUrl: string;
     status: "upcoming" | "ongoing" | "completed";
@@ -61,6 +62,10 @@ const tournamentSchema = new Schema<ITournament>(
         rules: {
             type: String,
             default: "",
+        },
+        registrationFee: {
+            type: Number,
+            default: 0,
         },
         maxParticipants: {
             type: Number,

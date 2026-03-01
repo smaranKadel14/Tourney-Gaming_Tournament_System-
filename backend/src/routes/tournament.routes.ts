@@ -5,6 +5,9 @@ import {
     registerForTournament,
     getOrganizerTournaments,
     createTournament,
+    initiateEsewaPayment,
+    esewaSuccess,
+    esewaFailure,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 
@@ -15,5 +18,8 @@ router.get("/organizer/me", protect, authorize("organizer", "admin"), getOrganiz
 router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
 router.post("/:id/register", protect, registerForTournament);
+router.post("/:id/esewa-payment", protect, initiateEsewaPayment);
+router.get("/esewa/success", esewaSuccess);
+router.get("/esewa/failure", esewaFailure);
 
 export default router;
