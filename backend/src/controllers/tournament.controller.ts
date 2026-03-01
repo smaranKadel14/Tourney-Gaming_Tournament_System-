@@ -128,3 +128,53 @@ export const getOrganizerTournaments = async (req: Request, res: Response): Prom
         res.status(500).json({ message: "Server error" });
     }
 };
+
+// @desc    Create a new tournament
+// @route   POST /api/tournaments
+// @access  Private (Organizer/Admin)
+export const createTournament = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const organizerId = (req as any).user?.id;
+
+        if (!organizerId) {
+            res.status(401).json({ message: "Not authorized" });
+            return;
+        }
+
+        const {
+            title,
+            game,
+            description,
+            startDate,
+            endDate,
+            location,
+            registrationDeadline,
+            prizePool,
+            rules,
+            maxParticipants,
+            imageUrl,
+            status
+        } = req.body;
+
+        const tournament = await Tournament.create({
+            title,
+            game,
+            organizer: organizerId,
+            description,
+            startDate,
+            endDate,
+            location,
+            registrationDeadline,
+            prizePool: prizePool || "TBA",
+            rules: rules || "",
+            maxParticipants: maxParticipants || 0,
+            imageUrl,
+            status: status || "upcoming"
+        });
+
+        res.status(201).json(tournament);
+    } catch (error: any) {
+        console.error("Error creating tournament:", error);
+        res.status(500).json({ message: "Server error", details: error.message, errors: error.errors });
+    }
+};

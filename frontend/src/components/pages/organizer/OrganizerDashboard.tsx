@@ -1,6 +1,7 @@
 import "./OrganizerDashboard.css";
 import { useEffect, useState } from "react";
 import { clearAuthUser, getToken } from "../../../utils/auth";
+import CreateTournament from "./CreateTournament";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -15,6 +16,7 @@ type TournamentRow = {
 
 const OrganizerDashboard = () => {
   const [search, setSearch] = useState("");
+  const [activeView, setActiveView] = useState<"dashboard" | "create">("dashboard");
 
   const handleLogout = () => {
     clearAuthUser();
@@ -76,10 +78,16 @@ const OrganizerDashboard = () => {
         <div className="od__brand">LOGO</div>
 
         <nav className="od__menu">
-          <button className="od__item od__item--active">
+          <button 
+            className={`od__item ${activeView === "dashboard" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("dashboard")}
+          >
             <span className="od__icon">▦</span> Dashboard
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "create" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("create")}
+          >
             <span className="od__icon">＋</span> Create Tournament
           </button>
           <button className="od__item">
@@ -133,115 +141,124 @@ const OrganizerDashboard = () => {
               <span className="od__dot" />
             </button>
 
-            <button className="od__primaryBtn">
+            <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
               <span className="od__plus">＋</span> Quick Create
             </button>
           </div>
         </header>
 
-        {/* Stats */}
-        <section className="od__stats">
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">🏆</span> Total Tournaments
+        {activeView === "dashboard" ? (
+          <>
+            {/* Stats */}
+            <section className="od__stats">
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">🏆</span> Total Tournaments
+                  </div>
+                  <div className="od__ghostIcon">🏆</div>
+                </div>
+                <div className="od__statValue">{tournaments.length}</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">🏆</div>
-            </div>
-            <div className="od__statValue">{tournaments.length}</div>
-            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
-          </div>
 
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">▶</span> Active Tournaments
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">▶</span> Active Tournaments
+                  </div>
+                  <div className="od__ghostIcon">▶</div>
+                </div>
+                <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">▶</div>
-            </div>
-            <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
-            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
-          </div>
 
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">👥</span> Registered Players
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">👥</span> Registered Players
+                  </div>
+                  <div className="od__ghostIcon">👥</div>
+                </div>
+                <div className="od__statValue">0</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">👥</div>
-            </div>
-            <div className="od__statValue">0</div>
-            <div className="od__statChange od__statChange--up">↗ Dynamic</div>
-          </div>
-        </section>
+            </section>
 
-        {/* Table */}
-        <section className="od__panel">
-          <div className="od__panelHead">
-            <h2 className="od__panelTitle">Recent Tournaments</h2>
-            <button className="od__linkBtn">View All →</button>
-          </div>
+            {/* Table */}
+            <section className="od__panel">
+              <div className="od__panelHead">
+                <h2 className="od__panelTitle">Recent Tournaments</h2>
+                <button className="od__linkBtn">View All →</button>
+              </div>
 
-          <div className="od__tableWrap">
-            {loading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
-            ) : (
-            <table className="od__table">
-              <thead>
-                <tr>
-                  <th>TOURNAMENT NAME</th>
-                  <th>GAME</th>
-                  <th>DATE</th>
-                  <th>STATUS</th>
-                  <th>PARTICIPANTS</th>
-                  <th className="od__thRight">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t) => (
-                  <tr key={t.id}>
-                    <td>
-                      <div className="od__tName">{t.name}</div>
-                      <div className="od__tId">ID: #{t.id}</div>
-                    </td>
-                    <td className="od__muted">{t.game}</td>
-                    <td className="od__muted">{t.date}</td>
-                    <td>
-                      <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="od__muted">{t.participants}</td>
-                    <td className="od__actions">
-                      <button className="od__dots" title="More">⋮</button>
-                    </td>
-                  </tr>
-                ))}
+              <div className="od__tableWrap">
+                {loading ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
+                ) : (
+                <table className="od__table">
+                  <thead>
+                    <tr>
+                      <th>TOURNAMENT NAME</th>
+                      <th>GAME</th>
+                      <th>DATE</th>
+                      <th>STATUS</th>
+                      <th>PARTICIPANTS</th>
+                      <th className="od__thRight">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((t) => (
+                      <tr key={t.id}>
+                        <td>
+                          <div className="od__tName">{t.name}</div>
+                          <div className="od__tId">ID: #{t.id}</div>
+                        </td>
+                        <td className="od__muted">{t.game}</td>
+                        <td className="od__muted">{t.date}</td>
+                        <td>
+                          <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="od__muted">{t.participants}</td>
+                        <td className="od__actions">
+                          <button className="od__dots" title="More">⋮</button>
+                        </td>
+                      </tr>
+                    ))}
 
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="od__empty">
-                      No tournaments found.
-                    </td>
-                  </tr>
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="od__empty">
+                          No tournaments found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
                 )}
-              </tbody>
-            </table>
-            )}
-          </div>
+              </div>
 
-          <div className="od__tableFooter">
-            <div className="od__mutedSmall">
-              Showing {Math.min(filtered.length, 4)} of {tournaments.length} tournaments
-            </div>
-            <div className="od__pager">
-              <button className="od__pagerBtn" disabled>
-                Previous
-              </button>
-              <button className="od__pagerBtn">Next</button>
-            </div>
-          </div>
-        </section>
+              <div className="od__tableFooter">
+                <div className="od__mutedSmall">
+                  Showing {Math.min(filtered.length, 4)} of {tournaments.length} tournaments
+                </div>
+                <div className="od__pager">
+                  <button className="od__pagerBtn" disabled>
+                    Previous
+                  </button>
+                  <button className="od__pagerBtn">Next</button>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : (
+          <CreateTournament onSuccess={() => {
+            setActiveView("dashboard");
+            window.location.reload();
+          }} />
+        )}
       </main>
     </div>
   );

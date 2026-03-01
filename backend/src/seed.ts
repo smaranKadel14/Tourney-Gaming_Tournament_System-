@@ -5,6 +5,8 @@ import Game from "./models/Game";
 import Tournament from "./models/Tournament";
 import News from "./models/News";
 import Registration from "./models/Registration";
+import User from "./models/User";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -13,10 +15,20 @@ const seedData = async () => {
         await connectDB();
 
         console.log("Clearing existing data...");
+        await User.deleteMany();
         await Game.deleteMany();
         await Tournament.deleteMany();
         await News.deleteMany();
         await Registration.deleteMany();
+
+        console.log("Seeding Users...");
+        const hashedPassword = await bcrypt.hash("password123", 10);
+        const organizerUser = await User.create({
+            fullName: "Seed Organizer",
+            email: "organizer@example.com",
+            password: hashedPassword,
+            role: "organizer"
+        });
 
         console.log("Seeding Games...");
         const addedGames = await Game.insertMany([
@@ -38,6 +50,33 @@ const seedData = async () => {
                 genre: ["Hero shooter", "Tactical shooter"],
                 isFeatured: false,
             },
+            {
+                title: "PUBG: Battlegrounds",
+                description: "Battle royale game developed by PUBG Studios.",
+                imageUrl: "https://via.placeholder.com/600x400/cc8800/fff?text=PUBG",
+                releaseDate: new Date("2017-12-20"),
+                developer: "PUBG Studios",
+                genre: ["Battle Royale", "Shooter"],
+                isFeatured: true,
+            },
+            {
+                title: "Counter-Strike 2",
+                description: "Tactical first-person shooter developed by Valve.",
+                imageUrl: "https://via.placeholder.com/600x400/dda800/fff?text=CS2",
+                releaseDate: new Date("2023-09-27"),
+                developer: "Valve",
+                genre: ["Tactical shooter", "First-person shooter"],
+                isFeatured: true,
+            },
+            {
+                title: "League of Legends",
+                description: "Multiplayer online battle arena game by Riot Games.",
+                imageUrl: "https://via.placeholder.com/600x400/003366/fff?text=League+of+Legends",
+                releaseDate: new Date("2009-10-27"),
+                developer: "Riot Games",
+                genre: ["MOBA"],
+                isFeatured: true,
+            },
         ]);
 
         console.log("Seeding Tournaments...");
@@ -45,6 +84,7 @@ const seedData = async () => {
             {
                 title: "Summer Championship 2026",
                 game: addedGames[0]._id,
+                organizer: organizerUser._id,
                 description: "The biggest Warzone tournament of the season.",
                 startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
                 endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
@@ -59,6 +99,7 @@ const seedData = async () => {
             {
                 title: "Valorant Radiant Series",
                 game: addedGames[1]._id,
+                organizer: organizerUser._id,
                 description: "Weekly Valorant cash cup.",
                 startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
                 location: "Online",
