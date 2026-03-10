@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
+import AdminLayout from "./AdminLayout";
 import "./AdminDashboard.css";
-import { clearAuthUser } from "../../../utils/auth";
 
 type ActivityStatus = "Completed" | "Pending Review" | "Processing";
 
@@ -22,18 +22,11 @@ type ApprovalItem = {
 const AdminDashboard = () => {
   const [search, setSearch] = useState("");
 
-  const handleLogout = () => {
-    clearAuthUser();
-    window.location.href = '/login';
-  };
-
-  // I am keeping dummy data for now (backend integration later)
-
   const stats = useMemo(
     () => [
-      { label: "TOTAL USERS", value: "12,450", delta: "+12% vs last month", icon: "users" },
-      { label: "TOTAL TOURNAMENTS", value: "85", delta: "+5% vs last month", icon: "trophy" },
-      { label: "ACTIVE MATCHES", value: "12", delta: "+2% vs last hour", icon: "game" },
+      { label: "TOTAL USERS", value: "12,450", delta: "+12%", desc: "vs last month", icon: "users", up: true },
+      { label: "TOTAL TOURNAMENTS", value: "85", delta: "+5%", desc: "vs last month", icon: "trophy", up: true },
+      { label: "ACTIVE MATCHES", value: "12", delta: "+2%", desc: "vs last hour", icon: "game", up: true },
     ],
     []
   );
@@ -67,174 +60,133 @@ const AdminDashboard = () => {
     );
   }, [activity, search]);
 
-  const handleApprove = (id: string) => {
-    // later: call backend API
-    alert(`Approved: ${id}`);
-  };
-
-  const handleReject = (id: string) => {
-    // later: call backend API
-    alert(`Rejected: ${id}`);
-  };
+  const handleApprove = (id: string) => alert(`Approved: ${id}`);
+  const handleReject = (id: string) => alert(`Rejected: ${id}`);
 
   return (
-    <div className="admin-shell">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="brand">LOGO</div>
-
-        <nav className="nav">
-          <button className="nav-item active">
-            <span className="nav-ic">▦</span>
-            Dashboard
-          </button>
-
-          <button className="nav-item">
-            <span className="nav-ic">👥</span>
-            Users
-          </button>
-
-          <button className="nav-item">
-            <span className="nav-ic">🏆</span>
-            Tournaments
-          </button>
-
-          <button className="nav-item">
-            <span className="nav-ic">📄</span>
-            System Logs
-          </button>
-
-          <button className="nav-item">
-            <span className="nav-ic">⚙️</span>
-            Settings
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button onClick={handleLogout} className="logout">
-            <span className="nav-ic">⟵</span> Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="admin-main">
-        {/* Top bar */}
-        <div className="topbar">
-          <div className="breadcrumb">Home / Dashboard</div>
-
-          <div className="topbar-right">
-            <div className="search">
-              <span className="search-ic">🔎</span>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search activity..."
-              />
-            </div>
-
-            <button className="btn secondary">
-              <span className="btn-ic">👤+</span> Invite User
-            </button>
-
-            {/* Admin usually does not create tournament (organizer does).
-                So I replaced it with Approvals shortcut. */}
-            <button className="btn primary">
-              <span className="btn-ic">✓</span> Approvals
-            </button>
-          </div>
-        </div>
-
-        {/* Header */}
-        <header className="header">
+    <AdminLayout 
+      breadcrumb="Dashboard" 
+      search={search} 
+      onSearch={setSearch}
+    >
+      {/* Header */}
+      <header className="admin-header">
+        <div className="admin-header-title">
           <h1>Dashboard Overview</h1>
-          <p>Welcome back, Admin. Here is what’s happening today.</p>
-        </header>
+          <p>Welcome back, Admin. Here is what's happening today.</p>
+        </div>
+        <div className="admin-header-actions">
+          <button className="admin-btn admin-btn--secondary">
+            <span className="admin-btn-ic">👤+</span> Invite User
+          </button>
+          <button className="admin-btn admin-btn--primary">
+            <span className="admin-btn-ic">+</span> Create Tournament
+          </button>
+        </div>
+      </header>
 
-        {/* Stats */}
-        <section className="stats">
-          {stats.map((s) => (
-            <div key={s.label} className="stat-card">
-              <div className="stat-top">
-                <div className="stat-label">{s.label}</div>
-                <div className={`stat-icon ${s.icon}`}></div>
+      {/* Stats Grid */}
+      <section className="admin-stats-grid">
+        {stats.map((s) => (
+          <div key={s.label} className="admin-stat-card">
+            <div className="admin-stat-top">
+              <div className="admin-stat-info">
+                <div className="admin-stat-label">{s.label}</div>
+                <div className="admin-stat-value">{s.value}</div>
               </div>
-
-              <div className="stat-value">{s.value}</div>
-              <div className="stat-delta">
-                <span className="up">↗</span> {s.delta}
+              <div className={`admin-stat-icon admin-stat-icon--${s.icon}`}>
+                 {s.icon === 'users' && '👥'}
+                 {s.icon === 'trophy' && '🏆'}
+                 {s.icon === 'game' && '🎮'}
               </div>
             </div>
-          ))}
-        </section>
-
-        {/* Content grid */}
-        <section className="grid">
-          {/* Recent Activity */}
-          <div className="card">
-            <div className="card-head">
-              <h2>Recent Activity</h2>
-              <button className="link-btn">View All</button>
-            </div>
-
-            <div className="table">
-              <div className="row head">
-                <div>ACTIVITY</div>
-                <div>USER</div>
-                <div>DATE</div>
-                <div>STATUS</div>
+            <div className="admin-stat-bottom">
+              <div className={`admin-stat-delta ${s.up ? 'admin-stat-delta--up' : 'admin-stat-delta--down'}`}>
+                {s.up ? '↗' : '↘'} {s.delta}
               </div>
-
-              {filteredActivity.map((a) => (
-                <div key={a.id} className="row">
-                  <div className="activity-cell">
-                    <span className={`mini-ic ${a.icon}`}></span>
-                    <span>{a.title}</span>
-                  </div>
-                  <div className="muted">{a.user}</div>
-                  <div className="muted">{a.time}</div>
-                  <div>
-                    <span className={`pill ${a.status.replace(" ", "-").toLowerCase()}`}>
-                      {a.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <span className="admin-stat-desc">{s.desc}</span>
             </div>
           </div>
+        ))}
+      </section>
 
-          {/* Pending Approvals */}
-          <div className="card approvals">
-            <div className="card-head">
-              <h2>Pending Approvals</h2>
-            </div>
-
-            <div className="approvals-list">
-              {approvals.map((p) => (
-                <div key={p.id} className="approval-item">
-                  <div className="avatar">{p.name.charAt(0)}</div>
-                  <div className="approval-info">
-                    <div className="approval-name">{p.name}</div>
-                    <div className="approval-sub">{p.subtitle}</div>
-                  </div>
-
-                  <div className="approval-actions">
-                    <button className="icon-btn ok" onClick={() => handleApprove(p.id)}>
-                      ✓
-                    </button>
-                    <button className="icon-btn no" onClick={() => handleReject(p.id)}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="btn ghost">View All Pending</button>
+      {/* Content Grid */}
+      <section className="admin-content-grid">
+        {/* Recent Activity */}
+        <div className="admin-panel admin-activity-panel">
+          <div className="admin-panel-head">
+            <h2>Recent Activity</h2>
+            <button className="admin-link-btn">View All</button>
           </div>
-        </section>
-      </main>
-    </div>
+
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>ACTIVITY</th>
+                  <th>USER</th>
+                  <th>DATE</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredActivity.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <div className="admin-activity-cell">
+                        <span className={`admin-mini-ic admin-mini-ic--${a.icon}`}>
+                           {a.icon === 'tournament' && '+'}
+                           {a.icon === 'dispute' && '🚩'}
+                           {a.icon === 'organizer' && '💼'}
+                           {a.icon === 'registration' && '→'}
+                        </span>
+                        <span className="admin-activity-title">{a.title}</span>
+                      </div>
+                    </td>
+                    <td className="admin-td-muted">{a.user}</td>
+                    <td className="admin-td-muted">{a.time}</td>
+                    <td>
+                      <span className={`admin-badge admin-badge--${a.status.replace(" ", "-").toLowerCase()}`}>
+                        {a.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pending Approvals */}
+        <div className="admin-panel admin-approvals-panel">
+          <div className="admin-panel-head">
+            <h2>Pending Approvals</h2>
+          </div>
+
+          <div className="admin-approvals-list">
+            {approvals.map((p) => (
+              <div key={p.id} className="admin-approval-item">
+                <div className="admin-avatar">{p.name.charAt(0)}</div>
+                <div className="admin-approval-info">
+                  <div className="admin-approval-name">{p.name}</div>
+                  <div className="admin-approval-sub">{p.subtitle}</div>
+                </div>
+                <div className="admin-approval-actions">
+                  <button className="admin-icon-btn admin-icon-btn--ok" onClick={() => handleApprove(p.id)}>
+                    ✓
+                  </button>
+                  <button className="admin-icon-btn admin-icon-btn--no" onClick={() => handleReject(p.id)}>
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button className="admin-btn admin-btn--outline admin-btn--full">View All Pending</button>
+        </div>
+      </section>
+    </AdminLayout>
   );
 };
 

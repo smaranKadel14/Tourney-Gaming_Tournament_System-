@@ -47,6 +47,7 @@
   cursor: pointer;
   text-align: left;
   font-size: 14px;
+  outline: none;
 }
 
 .od__item:hover {

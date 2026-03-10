@@ -12,6 +12,10 @@ import TournamentDetails from "../pages/player/TournamentDetails";
 import PaymentFailure from "../pages/player/PaymentFailure";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminTournaments from "../pages/admin/AdminTournaments";
+import AdminLogs from "../pages/admin/AdminLogs";
+import AdminSettings from "../pages/admin/AdminSettings";
 
 import ProtectedRoute from "./ProtectedRoutes";
 import PublicOnlyRoute from "./PublicOnlyRoutes";
@@ -101,6 +105,42 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/tournaments"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminTournaments />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/logs"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLogs />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminSettings />
           </ProtectedRoute>
         }
       />
