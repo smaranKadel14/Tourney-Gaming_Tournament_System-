@@ -84,20 +84,98 @@ button:hover {
   text-decoration: none;
 }
 
-.role-switch {
+.auth-role-group {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.role-switch button {
-  flex: 1;
   background: #020617;
+  padding: 4px;
+  border-radius: 8px;
   border: 1px solid #1e293b;
+  margin-bottom: 20px;
 }
 
-.role-switch .active {
+.auth-role-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0;
+}
+
+.auth-role-btn.active {
   background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.auth-role-btn:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.auth-role-btn.active:hover {
+  background: #1d4ed8;
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-wrapper input {
+  padding-right: 40px;
+}
+
+.auth-input-icon {
+  position: absolute;
+  right: 12px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  margin-top: 5px;
+}
+.auth-input-icon:hover {
+  color: #cbd5e1;
+}
+
+.auth-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.auth-checkbox-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.auth-checkbox-row label {
+  margin: 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.auth-checkbox-row a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+.auth-checkbox-row a:hover {
+  text-decoration: underline;
 }
 
 .auth-error{
@@ -110,6 +188,81 @@ button:hover {
   margin: 10px 0 12px;
 }
 
-/* .role-switch button:hover {
-  background: #1d4ed8;
-} */
+/* New Login UI Additions */
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.auth-label-row label {
+  margin-top: 0;
+}
+.auth-forgot-link {
+  font-size: 12px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+.auth-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 24px 0;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #1e293b;
+}
+.auth-divider:not(:empty)::before {
+  margin-right: .5em;
+}
+.auth-divider:not(:empty)::after {
+  margin-left: .5em;
+}
+
+.auth-social-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid #1e293b;
+  color: #cbd5f5;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0; 
+}
+
+.auth-social-btn:hover {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.auth-social-ic {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
