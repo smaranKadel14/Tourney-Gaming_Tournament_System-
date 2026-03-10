@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ITournament extends Document {
     title: string;
     game: mongoose.Types.ObjectId;
+    organizer: mongoose.Types.ObjectId;
     description: string;
     startDate: Date;
     endDate: Date;
@@ -10,6 +11,7 @@ export interface ITournament extends Document {
     registrationDeadline: Date;
     prizePool: string;
     rules: string;
+    registrationFee: number;
     maxParticipants: number;
     imageUrl: string;
     status: "upcoming" | "ongoing" | "completed";
@@ -27,6 +29,11 @@ const tournamentSchema = new Schema<ITournament>(
         game: {
             type: Schema.Types.ObjectId,
             ref: "Game",
+            required: true,
+        },
+        organizer: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
             required: true,
         },
         description: {
@@ -55,6 +62,10 @@ const tournamentSchema = new Schema<ITournament>(
         rules: {
             type: String,
             default: "",
+        },
+        registrationFee: {
+            type: Number,
+            default: 0,
         },
         maxParticipants: {
             type: Number,

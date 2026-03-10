@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import PlayerNavbar from "./PlayerNavbar";
 import "./Tournaments.css";
@@ -71,18 +72,20 @@ export default function Tournaments() {
             ) : (
               <div className="pt-games-grid">
                 {tournaments.map((tourney) => (
-                  <div key={tourney._id} className="pt-game-card">
-                    <div 
-                      className="pt-game-image" 
-                      // Fallback to local image in case URL is broken
-                      style={{ backgroundImage: `url(${valImg})` }} 
-                    />
-                    <div className="pt-game-name-overlay" style={{ fontSize: "16px", padding: "10px" }}>
-                      <span style={{ display: "block", fontSize: "12px", opacity: 0.8 }}>{tourney.game?.title || "Game"}</span>
-                      {tourney.title}
-                      <span style={{ display: "block", fontSize: "12px", color: "#a200ff", marginTop: "4px" }}>Prize: {tourney.prizePool}</span>
+                  <Link to={`/tournament/${tourney._id}`} key={tourney._id} style={{ textDecoration: 'none' }}>
+                    <div className="pt-game-card">
+                      <div 
+                        className="pt-game-image" 
+                        // Fallback to local image in case URL is broken
+                        style={{ backgroundImage: `url(${valImg})` }} 
+                      />
+                      <div className="pt-game-name-overlay" style={{ fontSize: "16px", padding: "10px" }}>
+                        <span style={{ display: "block", fontSize: "12px", opacity: 0.8 }}>{tourney.game?.title || "Game"}</span>
+                        {tourney.title}
+                        <span style={{ display: "block", fontSize: "12px", color: "#a200ff", marginTop: "4px" }}>Prize: {tourney.prizePool}</span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

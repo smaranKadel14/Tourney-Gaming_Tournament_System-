@@ -1,6 +1,10 @@
 import "./OrganizerDashboard.css";
-import { useMemo, useState } from "react";
-import { clearAuthUser } from "../../../utils/auth";
+import { useEffect, useState } from "react";
+import { clearAuthUser, getToken } from "../../../utils/auth";
+import CreateTournament from "./CreateTournament";
+import MyTournaments from "./MyTournaments";
+import OrganizerPlayers from "./OrganizerPlayers";
+import OrganizerSettings from "./OrganizerSettings";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -15,50 +19,50 @@ type TournamentRow = {
 
 const OrganizerDashboard = () => {
   const [search, setSearch] = useState("");
+  const [activeView, setActiveView] = useState<"dashboard" | "create" | "my-tournaments" | "players" | "settings">("dashboard");
 
   const handleLogout = () => {
     clearAuthUser();
     window.location.href = '/login';
   };
 
-  // Dummy data (later: from backend)
-  const tournaments: TournamentRow[] = useMemo(
-    () => [
-      {
-        id: "TR-8832",
-        name: "Neon City Showdown",
-        game: "Valorant",
-        date: "Oct 24, 2023",
-        status: "Live",
-        participants: "42",
-      },
-      {
-        id: "TR-9921",
-        name: "Apex Legends: Winter Cup",
-        game: "Apex Legends",
-        date: "Nov 02, 2023",
-        status: "Registrations Open",
-        participants: "120",
-      },
-      {
-        id: "TR-7712",
-        name: "Weekend Warriors",
-        game: "CS:GO",
-        date: "Oct 20, 2023",
-        status: "Completed",
-        participants: "64",
-      },
-      {
-        id: "TR-4402",
-        name: "Rocket League Pro Series",
-        game: "Rocket League",
-        date: "Nov 15, 2023",
-        status: "Draft",
-        participants: "—",
-      },
-    ],
-    []
-  );
+  const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+
+        const res = await fetch("http://localhost:5000/api/tournaments/organizer/me", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const formatted = data.map((t: any) => ({
+            id: t._id,
+            name: t.title,
+            game: t.game?.title || "Unknown Game",
+            date: new Date(t.startDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+            status: t.status === "completed" ? "Completed" 
+                  : t.status === "ongoing" ? "Live"
+                  : "Registrations Open",
+            participants: "—",
+          }));
+          setTournaments(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching tournaments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTournaments();
+  }, []);
 
   const filtered = tournaments.filter((t) => {
     const q = search.trim().toLowerCase();
@@ -77,19 +81,34 @@ const OrganizerDashboard = () => {
         <div className="od__brand">LOGO</div>
 
         <nav className="od__menu">
-          <button className="od__item od__item--active">
+          <button 
+            className={`od__item ${activeView === "dashboard" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("dashboard")}
+          >
             <span className="od__icon">▦</span> Dashboard
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "create" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("create")}
+          >
             <span className="od__icon">＋</span> Create Tournament
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "my-tournaments" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("my-tournaments")}
+          >
             <span className="od__icon">≡</span> My Tournaments
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "players" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("players")}
+          >
             <span className="od__icon">👥</span> Players
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "settings" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("settings")}
+          >
             <span className="od__icon">⚙</span> Settings
           </button>
         </nav>
@@ -134,111 +153,134 @@ const OrganizerDashboard = () => {
               <span className="od__dot" />
             </button>
 
-            <button className="od__primaryBtn">
+            <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
               <span className="od__plus">＋</span> Quick Create
             </button>
           </div>
         </header>
 
-        {/* Stats */}
-        <section className="od__stats">
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">🏆</span> Total Tournaments
+        {activeView === "dashboard" ? (
+          <>
+            {/* Stats */}
+            <section className="od__stats">
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">🏆</span> Total Tournaments
+                  </div>
+                  <div className="od__ghostIcon">🏆</div>
+                </div>
+                <div className="od__statValue">{tournaments.length}</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">🏆</div>
-            </div>
-            <div className="od__statValue">12</div>
-            <div className="od__statChange od__statChange--up">↗ +2% this month</div>
-          </div>
 
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">▶</span> Active Tournaments
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">▶</span> Active Tournaments
+                  </div>
+                  <div className="od__ghostIcon">▶</div>
+                </div>
+                <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">▶</div>
-            </div>
-            <div className="od__statValue">3</div>
-            <div className="od__statChange od__statChange--up">↗ 1 starting today</div>
-          </div>
 
-          <div className="od__statCard">
-            <div className="od__statTop">
-              <div className="od__statLabel">
-                <span className="od__statIcon">👥</span> Registered Players
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <span className="od__statIcon">👥</span> Registered Players
+                  </div>
+                  <div className="od__ghostIcon">👥</div>
+                </div>
+                <div className="od__statValue">0</div>
+                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
-              <div className="od__ghostIcon">👥</div>
-            </div>
-            <div className="od__statValue">1,250</div>
-            <div className="od__statChange od__statChange--up">↗ +15% vs last week</div>
-          </div>
-        </section>
+            </section>
 
-        {/* Table */}
-        <section className="od__panel">
-          <div className="od__panelHead">
-            <h2 className="od__panelTitle">Recent Tournaments</h2>
-            <button className="od__linkBtn">View All →</button>
-          </div>
+            {/* Table */}
+            <section className="od__panel">
+              <div className="od__panelHead">
+                <h2 className="od__panelTitle">Recent Tournaments</h2>
+                <button className="od__linkBtn">View All →</button>
+              </div>
 
-          <div className="od__tableWrap">
-            <table className="od__table">
-              <thead>
-                <tr>
-                  <th>TOURNAMENT NAME</th>
-                  <th>GAME</th>
-                  <th>DATE</th>
-                  <th>STATUS</th>
-                  <th>PARTICIPANTS</th>
-                  <th className="od__thRight">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t) => (
-                  <tr key={t.id}>
-                    <td>
-                      <div className="od__tName">{t.name}</div>
-                      <div className="od__tId">ID: #{t.id}</div>
-                    </td>
-                    <td className="od__muted">{t.game}</td>
-                    <td className="od__muted">{t.date}</td>
-                    <td>
-                      <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="od__muted">{t.participants}</td>
-                    <td className="od__actions">
-                      <button className="od__dots" title="More">⋮</button>
-                    </td>
-                  </tr>
-                ))}
+              <div className="od__tableWrap">
+                {loading ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
+                ) : (
+                <table className="od__table">
+                  <thead>
+                    <tr>
+                      <th>TOURNAMENT NAME</th>
+                      <th>GAME</th>
+                      <th>DATE</th>
+                      <th>STATUS</th>
+                      <th>PARTICIPANTS</th>
+                      <th className="od__thRight">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((t) => (
+                      <tr key={t.id}>
+                        <td>
+                          <div className="od__tName">{t.name}</div>
+                          <div className="od__tId">ID: #{t.id}</div>
+                        </td>
+                        <td className="od__muted">{t.game}</td>
+                        <td className="od__muted">{t.date}</td>
+                        <td>
+                          <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="od__muted">{t.participants}</td>
+                        <td className="od__actions">
+                          <button className="od__dots" title="More">⋮</button>
+                        </td>
+                      </tr>
+                    ))}
 
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="od__empty">
-                      No tournaments found.
-                    </td>
-                  </tr>
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="od__empty">
+                          No tournaments found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          <div className="od__tableFooter">
-            <div className="od__mutedSmall">
-              Showing {Math.min(filtered.length, 4)} of {tournaments.length} tournaments
-            </div>
-            <div className="od__pager">
-              <button className="od__pagerBtn" disabled>
-                Previous
-              </button>
-              <button className="od__pagerBtn">Next</button>
-            </div>
-          </div>
-        </section>
+              <div className="od__tableFooter">
+                <div className="od__mutedSmall">
+                  Showing {Math.min(filtered.length, 4)} of {tournaments.length} tournaments
+                </div>
+                <div className="od__pager">
+                  <button className="od__pagerBtn" disabled>
+                    Previous
+                  </button>
+                  <button className="od__pagerBtn">Next</button>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : activeView === "my-tournaments" ? (
+          <MyTournaments 
+             tournaments={tournaments} 
+             loading={loading} 
+             onCreateNew={() => setActiveView("create")} 
+          />
+        ) : activeView === "players" ? (
+          <OrganizerPlayers />
+        ) : activeView === "settings" ? (
+          <OrganizerSettings />
+        ) : (
+          <CreateTournament onSuccess={() => {
+            setActiveView("dashboard");
+            window.location.reload();
+          }} />
+        )}
       </main>
     </div>
   );
