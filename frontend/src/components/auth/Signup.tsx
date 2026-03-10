@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Gamepad2, Shield, Eye, EyeOff } from "lucide-react";
 import "./Auth.css";
 import { api } from "../../lib/api";
 import { saveAuth, roleHomePath } from "../../utils/auth";
@@ -17,16 +18,17 @@ type RegisterResponse = {
 const Signup = () => {
   const navigate = useNavigate();
 
-  // I am keeping role selection (player/organizer)
   const [role, setRole] = useState<"player" | "organizer">("player");
 
-  // I am keeping input states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // I am keeping loading + error for feedback
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,19 +40,22 @@ const Signup = () => {
       setError("All fields are required");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+    if (!agreed) {
+      setError("You must agree to the Terms and Privacy Policy");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      // Calling backend register API
       const res = await api.post<RegisterResponse>("/auth/register", {
         fullName: name,
         email,
@@ -58,10 +63,7 @@ const Signup = () => {
         role,
       });
 
-      // Saving auth
       saveAuth(res.data.token, res.data.user);
-
-      // Redirect based on role
       navigate(roleHomePath(res.data.user.role));
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
@@ -72,26 +74,27 @@ const Signup = () => {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card" style={{ width: 420 }}>
         <h2>Create Account</h2>
-        <p className="subtitle">Join the ultimate tournament platform</p>
+        <p className="subtitle">Join the ultimate tournament platform.</p>
 
         {error && <div className="auth-error">{error}</div>}
 
-        <div className="role-switch">
+        <label style={{ marginBottom: 6 }}>I am joining as a</label>
+        <div className="auth-role-group">
           <button
-            className={role === "player" ? "active" : ""}
-            onClick={() => setRole("player")}
             type="button"
+            className={`auth-role-btn ${role === "player" ? "active" : ""}`}
+            onClick={() => setRole("player")}
           >
-            Player
+            <Gamepad2 size={16} /> Player
           </button>
           <button
-            className={role === "organizer" ? "active" : ""}
-            onClick={() => setRole("organizer")}
             type="button"
+            className={`auth-role-btn ${role === "organizer" ? "active" : ""}`}
+            onClick={() => setRole("organizer")}
           >
-            Organizer
+            <Shield size={16} /> Organizer
           </button>
         </div>
 
@@ -99,7 +102,7 @@ const Signup = () => {
           <label>Full Name</label>
           <input
             type="text"
-            placeholder="John Doe"
+            placeholder="e.g. John Doe"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -113,27 +116,49 @@ const Signup = () => {
           />
 
           <label>Password</label>
-          <input
-            type="password"
-            placeholder="At least 6 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="auth-input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="At least 8 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span className="auth-input-icon" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+            </span>
+          </div>
 
           <label>Confirm Password</label>
-          <input
-            type="password"
-            placeholder="Repeat password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
+          <div className="auth-input-wrapper">
+            <input
+              type={showConfirm ? "text" : "password"}
+              placeholder="Repeat password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            <span className="auth-input-icon" onClick={() => setShowConfirm(!showConfirm)}>
+              {showConfirm ? <Eye size={16} /> : <EyeOff size={16} />}
+            </span>
+          </div>
 
-          <button type="submit" disabled={loading}>
+          <div className="auth-checkbox-row">
+            <input 
+              type="checkbox" 
+              id="agreeCheck" 
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <label htmlFor="agreeCheck">
+              I agree to the <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.
+            </label>
+          </div>
+
+          <button type="submit" disabled={loading} style={{ marginTop: 24 }}>
             {loading ? "Creating..." : "Create Account"}
           </button>
         </form>
 
-        <p className="switch">
+        <p className="switch" style={{ marginTop: 24 }}>
           Already have an account? <Link to="/login">Login</Link>
         </p>
       </div>

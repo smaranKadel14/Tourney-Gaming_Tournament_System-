@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "../auth/Login";
 import Signup from "../auth/Signup";
+import ForgotPassword from "../auth/ForgotPassword";
+import ResetPassword from "../auth/ResetPassword";
 
 import PlayerHome from "../pages/player/PlayerHome";
 import Tournaments from "../pages/player/Tournaments";
@@ -26,6 +28,8 @@ export default function AppRoutes() {
       {/* Public routes - only when not logged in */}
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
       <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+      <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
+      <Route path="/reset-password/:token" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
 
       {/* Protected routes - only when logged in with correct role */}
       <Route
