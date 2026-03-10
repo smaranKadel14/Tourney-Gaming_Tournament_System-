@@ -1,7 +1,18 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 import User from "../models/User";
+
+// Setup Nodemailer transporter (User should configure ENV variables later)
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Change depending on provider
+  auth: {
+    user: process.env.EMAIL_USER || "test@example.com",
+    pass: process.env.EMAIL_PASS || "password123",
+  },
+});
 
 /* ===============================================
    Helper function -> generate JWT token
@@ -27,6 +38,12 @@ export const register = async (req: Request, res: Response) => {
       return res
         .status(400)
         .json({ message: "fullName, email, password are required" });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
     }
 
     if (password.length < 6) {
@@ -117,6 +134,12 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        message: "Account was created with a social login. Please sign in with Google or Discord.",
+      });
+    }
+
     // Compare password
     const ok = await bcrypt.compare(password, user.password);
 
@@ -168,4 +191,136 @@ export const me = async (req: Request, res: Response) => {
   }
 
   return res.json({ user });
+};
+
+/* ===============================================
+   OAUTH LOGIN (Google / Discord)
+   POST /api/auth/oauth
+   =============================================== */
+export const oauthLogin = async (req: Request, res: Response) => {
+  try {
+    const { provider, providerId, email, fullName, avatarUrl } = req.body;
+
+    if (!provider || !providerId || !email) {
+      return res.status(400).json({ message: "Provider info missing" });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Find existing user by email
+    let user = await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+      // First time logging in with this OAuth provider, create an account
+      user = await User.create({
+        fullName: fullName || "Gamer",
+        email: cleanEmail,
+        googleId: provider === "google" ? providerId : undefined,
+        discordId: provider === "discord" ? providerId : undefined,
+        avatarUrl: avatarUrl || "",
+        role: "player",
+      });
+    } else {
+      // Link the new provider if necessary
+      if (provider === "google" && !user.googleId) user.googleId = providerId;
+      if (provider === "discord" && !user.discordId) user.discordId = providerId;
+      await user.save();
+    }
+
+    const token = signToken({ id: user._id.toString(), role: user.role });
+
+    return res.json({
+      message: "OAuth Login successful",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err: any) {
+    console.error("OAUTH ERROR:", err);
+    return res.status(500).json({ message: "Server error during OAuth" });
+  }
+};
+
+/* ===============================================
+   FORGOT PASSWORD
+   POST /api/auth/forgot-password
+   =============================================== */
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email required" });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    
+    // For security, always return success even if email not found
+    if (!user) return res.json({ message: "If an account exists, a reset link was sent." });
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    await user.save({ validateBeforeSave: false });
+
+    // Send email
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    
+    // We try to send the email. If we fail (e.g., bad credentials), we still return success to the user 
+    // but log it to the console for the developer.
+    try {
+      await transporter.sendMail({
+        to: user.email,
+        subject: "Password Reset Request",
+        text: `You requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`
+      });
+      console.log(`[DEV ONLY] Reset Link Generated: ${resetUrl}`);
+    } catch (emailErr) {
+      console.log(`[DEV ONLY] Email failed to send, but here is the link: ${resetUrl}`);
+    }
+
+    return res.json({ message: "If an account exists, a reset link was sent." });
+  } catch (err: any) {
+    console.error("FORGOT PASSWORD ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ===============================================
+   RESET PASSWORD
+   POST /api/auth/reset-password
+   =============================================== */
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and new password required" });
+    }
+
+    // Hash the token from the user to compare it with the DB
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Token is invalid or has expired" });
+    }
+
+    // Set new password
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.json({ message: "Password reset successful. You may now log in." });
+  } catch (err: any) {
+    console.error("RESET PASSWORD ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };

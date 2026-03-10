@@ -58,6 +58,32 @@ const Login = () => {
     }
   };
 
+  const handleOAuth = async (provider: "google" | "discord") => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      // DEV MODE MOCK: Automatically sends a simulated OAuth payload to our backend.
+      // For production, wrap the Google button in @react-oauth/google's <GoogleLogin>
+      // and redirect to Discord's OAuth2 authorization URL.
+      const mockPayload = {
+        provider,
+        providerId: `mock-${provider}-id-12345`,
+        email: `gamer@${provider}.com`,
+        fullName: `${provider === 'google' ? 'Google' : 'Discord'} Gamer`,
+        avatarUrl: ""
+      };
+
+      const res = await api.post<LoginResponse>("/auth/oauth/login", mockPayload);
+      saveAuth(res.data.token, res.data.user);
+      navigate(roleHomePath(res.data.user.role));
+    } catch (err: any) {
+      setError(err?.response?.data?.message || `${provider} login failed`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -99,7 +125,7 @@ const Login = () => {
         <div className="auth-divider">OR CONTINUE WITH</div>
 
         <div className="auth-social-grid">
-          <button type="button" className="auth-social-btn" onClick={() => alert('Google login clicked')}>
+          <button type="button" className="auth-social-btn" onClick={() => handleOAuth('google')} disabled={loading}>
             <span className="auth-social-ic">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -111,7 +137,7 @@ const Login = () => {
             Google
           </button>
           
-          <button type="button" className="auth-social-btn" onClick={() => alert('Discord login clicked')}>
+          <button type="button" className="auth-social-btn" onClick={() => handleOAuth('discord')} disabled={loading}>
             <span className="auth-social-ic">
               <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" fill="#fff">
                 <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a67.73,67.73,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.1,46,96,53,91.08,65.69,84.69,65.69Z" />
