@@ -2,6 +2,9 @@ import "./OrganizerDashboard.css";
 import { useEffect, useState } from "react";
 import { clearAuthUser, getToken } from "../../../utils/auth";
 import CreateTournament from "./CreateTournament";
+import MyTournaments from "./MyTournaments";
+import OrganizerPlayers from "./OrganizerPlayers";
+import OrganizerSettings from "./OrganizerSettings";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -16,7 +19,7 @@ type TournamentRow = {
 
 const OrganizerDashboard = () => {
   const [search, setSearch] = useState("");
-  const [activeView, setActiveView] = useState<"dashboard" | "create">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "create" | "my-tournaments" | "players" | "settings">("dashboard");
 
   const handleLogout = () => {
     clearAuthUser();
@@ -90,13 +93,22 @@ const OrganizerDashboard = () => {
           >
             <span className="od__icon">＋</span> Create Tournament
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "my-tournaments" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("my-tournaments")}
+          >
             <span className="od__icon">≡</span> My Tournaments
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "players" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("players")}
+          >
             <span className="od__icon">👥</span> Players
           </button>
-          <button className="od__item">
+          <button 
+            className={`od__item ${activeView === "settings" ? "od__item--active" : ""}`}
+            onClick={() => setActiveView("settings")}
+          >
             <span className="od__icon">⚙</span> Settings
           </button>
         </nav>
@@ -253,6 +265,16 @@ const OrganizerDashboard = () => {
               </div>
             </section>
           </>
+        ) : activeView === "my-tournaments" ? (
+          <MyTournaments 
+             tournaments={tournaments} 
+             loading={loading} 
+             onCreateNew={() => setActiveView("create")} 
+          />
+        ) : activeView === "players" ? (
+          <OrganizerPlayers />
+        ) : activeView === "settings" ? (
+          <OrganizerSettings />
         ) : (
           <CreateTournament onSuccess={() => {
             setActiveView("dashboard");
