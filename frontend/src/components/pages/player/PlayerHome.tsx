@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../lib/api";
 import "./PlayerHome.css";
-import bg from "../../../assets/bg.png";
+import bg from "../../../assets/home/background.png";
 import gamerImg from "../../../assets/home/gamer.png";
 import placeholderImg from "../../../assets/home/COD.png";
 import PlayerNavbar from "./PlayerNavbar";
@@ -48,26 +48,34 @@ export default function PlayerHome() {
 
         {/* HERO SECTION */}
         <section className="ph__hero">
-          <h1 className="ph__title">WEBSITE NAME</h1>
-          <p className="ph__subtitle">Home Page</p>
+          <div className="ph__hero-badges">
+            <span className="ph__badge">🇳🇵 Made for Nepali Gamers</span>
+          </div>
+          <h1 className="ph__title">TOURNEY <span className="ph__title-highlight">NEPAL</span></h1>
+          <p className="ph__subtitle">The Premier Esports Arena of the Himalayas</p>
 
           <div className="ph__hero-content">
             <div className="ph__hero-left">
-              <img src={gamerImg} alt="Gamer" />
+              <div className="ph__image-wrapper">
+                <img src={gamerImg} alt="Nepali Esports Gamer" />
+                <div className="ph__image-glow"></div>
+              </div>
             </div>
             
             <div className="ph__hero-right">
-              <div className="ph__hero-block">
-                <h2>Hero Section<br/>FGF Playoff</h2>
+              <div className="ph__hero-block glass-panel">
+                <div className="ph__block-icon">🏆</div>
+                <h2>Kathmandu<br/>Clash Series</h2>
                 <p>
-                  This is content
+                  Join the most competitive weekend tournaments. Battle against top squads from all over Nepal for glory and exclusive prize pools.
                 </p>
               </div>
 
-              <div className="ph__hero-block">
-                <h2>Hero Section<br/>FGF Playoff</h2>
+              <div className="ph__hero-block glass-panel">
+                <div className="ph__block-icon">⚡</div>
+                <h2>Himalayan<br/>Showdown</h2>
                 <p>
-                  This is content
+                  Monthly major events featuring massive prize pools. Prove your skills on the national stage and rise through the leaderboard.
                 </p>
               </div>
             </div>
@@ -77,9 +85,9 @@ export default function PlayerHome() {
         {/* FEATURED GAME SECTION */}
         <section className="ph__section">
           <div className="ph__sectionHead">
-            <h2>RELEASED <span>GAMES</span></h2>
+            <h2>TRENDING IN <span className="text-gradient">NEPAL</span></h2>
             <p>
-              Explore our top featured games that are currently taking the esports world by storm.
+              Explore the hottest games dominating the Nepali esports scene right now. Get ready to drop in and dominate.
             </p>
           </div>
 
@@ -117,14 +125,14 @@ export default function PlayerHome() {
         {/* FOOTER */}
         <footer className="ph__footer" id="contact">
           <div className="ph__social">
-            <span>f</span>
-            <span>t</span>
-            <span>G+</span>
+            <span className="social-icon">f</span>
+            <span className="social-icon">t</span>
+            <span className="social-icon">in</span>
           </div>
           <p className="ph__copyright">
-            © 2026 NK GROUP INC. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
-            <br />LOGOS ARE REGISTERED TRADEMARKS. AND RELATED LOGOS ARE REGISTERED TRADEMARKS OR TRADEMARKS OF ID SOFTWARE LLC IN
-            <br />THE U.S. AND/OR OTHER COUNTRIES. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
+            © {new Date().getFullYear()} TOURNEY NEPAL. PROUDLY BUILT FOR GAMERS IN NEPAL 🇳🇵.
+            <br />ALL TRADEMARKS REFERENCED HEREIN ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS.
+            <br />LEVEL UP YOUR GAME.
           </p>
         </footer>
       </div>
