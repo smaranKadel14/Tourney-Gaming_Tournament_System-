@@ -28,10 +28,7 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg,
-      rgba(15, 5, 36, 0.85) 0%,
-      rgba(5, 2, 12, 0.98) 100%);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 5, 36, 0.4);
 }
 
 .ph__overlay::before {
@@ -140,17 +137,24 @@
   margin: 0 auto;
 }
 
+.ph__hero-left {
+  height: 100%;
+}
+
 .ph__image-wrapper {
   position: relative;
   border-radius: 16px;
   padding: 4px;
   background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .ph__hero-left img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   border-radius: 12px;
   display: block;
   position: relative;
