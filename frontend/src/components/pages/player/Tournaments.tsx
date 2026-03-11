@@ -5,7 +5,7 @@ import PlayerNavbar from "./PlayerNavbar";
 import "./Tournaments.css";
 
 // Assets
-import bg from "../../../assets/bg.png";
+import bg from "../../../assets/home/background.png";
 import valImg from "../../../assets/Tournaments/VAL.png";
 
 type GameInfo = {
