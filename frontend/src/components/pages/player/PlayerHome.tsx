@@ -4,6 +4,7 @@ import "./PlayerHome.css";
 import bg from "../../../assets/home/background.png";
 import gamerImg from "../../../assets/home/gamer.png";
 import placeholderImg from "../../../assets/home/COD.png";
+import { Trophy, Zap, Facebook, Twitter, Linkedin } from "lucide-react";
 import PlayerNavbar from "./PlayerNavbar";
 
 type GameInfo = {
@@ -64,7 +65,7 @@ export default function PlayerHome() {
             
             <div className="ph__hero-right">
               <div className="ph__hero-block glass-panel">
-                <div className="ph__block-icon">🏆</div>
+                <div className="ph__block-icon"><Trophy size={28} color="#a200ff" /></div>
                 <h2>Kathmandu<br/>Clash Series</h2>
                 <p>
                   Join the most competitive weekend tournaments. Battle against top squads from all over Nepal for glory and exclusive prize pools.
@@ -72,7 +73,7 @@ export default function PlayerHome() {
               </div>
 
               <div className="ph__hero-block glass-panel">
-                <div className="ph__block-icon">⚡</div>
+                <div className="ph__block-icon"><Zap size={28} color="#ffb800" /></div>
                 <h2>Himalayan<br/>Showdown</h2>
                 <p>
                   Monthly major events featuring massive prize pools. Prove your skills on the national stage and rise through the leaderboard.
@@ -125,9 +126,9 @@ export default function PlayerHome() {
         {/* FOOTER */}
         <footer className="ph__footer" id="contact">
           <div className="ph__social">
-            <span className="social-icon">f</span>
-            <span className="social-icon">t</span>
-            <span className="social-icon">in</span>
+            <span className="social-icon"><Facebook size={20} /></span>
+            <span className="social-icon"><Twitter size={20} /></span>
+            <span className="social-icon"><Linkedin size={20} /></span>
           </div>
           <p className="ph__copyright">
             © {new Date().getFullYear()} TOURNEY NEPAL. PROUDLY BUILT FOR GAMERS IN NEPAL 🇳🇵.

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../lib/api";
+import { Facebook, Twitter, Linkedin } from "lucide-react";
 import PlayerNavbar from "./PlayerNavbar";
 import "./Tournaments.css";
 
@@ -122,9 +123,9 @@ export default function Tournaments() {
         {/* Footer */}
         <footer className="pt-footer">
           <div className="pt-socials">
-            <span>f</span>
-            <span>t</span>
-            <span>G+</span>
+            <span><Facebook size={20} /></span>
+            <span><Twitter size={20} /></span>
+            <span><Linkedin size={20} /></span>
           </div>
           <p className="pt-copyright">
             © 2026 NK GROUP INC. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
