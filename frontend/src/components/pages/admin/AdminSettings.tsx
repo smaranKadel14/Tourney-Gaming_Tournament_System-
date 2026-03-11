@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
+import { Moon, Sun } from "lucide-react";
 import "./AdminDashboard.css";
 
 const AdminSettings = () => {
@@ -125,7 +126,9 @@ const AdminSettings = () => {
                   transition: 'all 0.2s'
                 }}
               >
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#111827', border: '1px solid #374151' }}></div>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#111827', border: '1px solid #374151', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Moon size={24} color="#e5e7eb" />
+                </div>
                 <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>Dark Mode</span>
               </div>
 
@@ -146,7 +149,9 @@ const AdminSettings = () => {
                   transition: 'all 0.2s'
                 }}
               >
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb' }}></div>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Sun size={24} color="#f59e0b" />
+                </div>
                 <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>Light Mode</span>
               </div>
             </div>

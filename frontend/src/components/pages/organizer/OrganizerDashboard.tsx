@@ -5,6 +5,19 @@ import CreateTournament from "./CreateTournament";
 import MyTournaments from "./MyTournaments";
 import OrganizerPlayers from "./OrganizerPlayers";
 import OrganizerSettings from "./OrganizerSettings";
+import { 
+  LayoutDashboard, 
+  Plus, 
+  List, 
+  Users, 
+  Settings, 
+  LogOut, 
+  Search, 
+  Bell, 
+  Trophy, 
+  Play, 
+  Trash2 
+} from "lucide-react";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -74,6 +87,32 @@ const OrganizerDashboard = () => {
     );
   });
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        setTournaments(prev => prev.filter(t => t.id !== id));
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to delete: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting tournament:", error);
+      alert("Server error. Could not delete tournament.");
+    }
+  };
+
   return (
     <div className="od">
       {/* Sidebar */}
@@ -85,31 +124,31 @@ const OrganizerDashboard = () => {
             className={`od__item ${activeView === "dashboard" ? "od__item--active" : ""}`}
             onClick={() => setActiveView("dashboard")}
           >
-            <span className="od__icon">▦</span> Dashboard
+            <LayoutDashboard className="od__icon" size={18} /> Dashboard
           </button>
           <button 
             className={`od__item ${activeView === "create" ? "od__item--active" : ""}`}
             onClick={() => setActiveView("create")}
           >
-            <span className="od__icon">＋</span> Create Tournament
+            <Plus className="od__icon" size={18} /> Create Tournament
           </button>
           <button 
             className={`od__item ${activeView === "my-tournaments" ? "od__item--active" : ""}`}
             onClick={() => setActiveView("my-tournaments")}
           >
-            <span className="od__icon">≡</span> My Tournaments
+            <List className="od__icon" size={18} /> My Tournaments
           </button>
           <button 
             className={`od__item ${activeView === "players" ? "od__item--active" : ""}`}
             onClick={() => setActiveView("players")}
           >
-            <span className="od__icon">👥</span> Players
+            <Users className="od__icon" size={18} /> Players
           </button>
           <button 
             className={`od__item ${activeView === "settings" ? "od__item--active" : ""}`}
             onClick={() => setActiveView("settings")}
           >
-            <span className="od__icon">⚙</span> Settings
+            <Settings className="od__icon" size={18} /> Settings
           </button>
         </nav>
 
@@ -123,7 +162,7 @@ const OrganizerDashboard = () => {
           </div>
 
           <button onClick={handleLogout} className="od__logout">
-            <span className="od__icon">⎋</span> Logout
+            <LogOut className="od__icon" size={18} /> Logout
           </button>
         </div>
       </aside>
@@ -139,7 +178,7 @@ const OrganizerDashboard = () => {
 
           <div className="od__topActions">
             <div className="od__searchWrap">
-              <span className="od__searchIcon">🔍</span>
+              <Search className="od__searchIcon" size={18} />
               <input
                 className="od__search"
                 placeholder="Search tournaments..."
@@ -149,12 +188,12 @@ const OrganizerDashboard = () => {
             </div>
 
             <button className="od__bell" title="Notifications">
-              🔔
+              <Bell size={20} />
               <span className="od__dot" />
             </button>
 
             <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
-              <span className="od__plus">＋</span> Quick Create
+              <Plus className="od__plus" size={18} /> Quick Create
             </button>
           </div>
         </header>
@@ -166,9 +205,9 @@ const OrganizerDashboard = () => {
               <div className="od__statCard">
                 <div className="od__statTop">
                   <div className="od__statLabel">
-                    <span className="od__statIcon">🏆</span> Total Tournaments
+                    <Trophy className="od__statIcon" size={18} /> Total Tournaments
                   </div>
-                  <div className="od__ghostIcon">🏆</div>
+                  <div className="od__ghostIcon"><Trophy size={48} /></div>
                 </div>
                 <div className="od__statValue">{tournaments.length}</div>
                 <div className="od__statChange od__statChange--up">↗ Dynamic</div>
@@ -177,9 +216,9 @@ const OrganizerDashboard = () => {
               <div className="od__statCard">
                 <div className="od__statTop">
                   <div className="od__statLabel">
-                    <span className="od__statIcon">▶</span> Active Tournaments
+                    <Play className="od__statIcon" size={18} /> Active Tournaments
                   </div>
-                  <div className="od__ghostIcon">▶</div>
+                  <div className="od__ghostIcon"><Play size={48} /></div>
                 </div>
                 <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
                 <div className="od__statChange od__statChange--up">↗ Dynamic</div>
@@ -188,9 +227,9 @@ const OrganizerDashboard = () => {
               <div className="od__statCard">
                 <div className="od__statTop">
                   <div className="od__statLabel">
-                    <span className="od__statIcon">👥</span> Registered Players
+                    <Users className="od__statIcon" size={18} /> Registered Players
                   </div>
-                  <div className="od__ghostIcon">👥</div>
+                  <div className="od__ghostIcon"><Users size={48} /></div>
                 </div>
                 <div className="od__statValue">0</div>
                 <div className="od__statChange od__statChange--up">↗ Dynamic</div>
@@ -235,7 +274,9 @@ const OrganizerDashboard = () => {
                         </td>
                         <td className="od__muted">{t.participants}</td>
                         <td className="od__actions">
-                          <button className="od__dots" title="More">⋮</button>
+                          <button className="od__dots" title="Delete" onClick={() => handleDelete(t.id, t.name)}>
+                            <Trash2 size={16} color="var(--status-danger-text)" />
+                          </button>
                         </td>
                       </tr>
                     ))}

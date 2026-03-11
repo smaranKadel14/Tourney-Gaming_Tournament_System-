@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
+import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, UserPlus } from "lucide-react";
 import "./AdminDashboard.css";
 
 type ActivityStatus = "Completed" | "Pending Review" | "Processing";
@@ -77,10 +78,10 @@ const AdminDashboard = () => {
         </div>
         <div className="admin-header-actions">
           <button className="admin-btn admin-btn--secondary">
-            <span className="admin-btn-ic">👤+</span> Invite User
+            <UserPlus className="admin-btn-ic" size={16} /> Invite User
           </button>
           <button className="admin-btn admin-btn--primary">
-            <span className="admin-btn-ic">+</span> Create Tournament
+            <Plus className="admin-btn-ic" size={16} /> Create Tournament
           </button>
         </div>
       </header>
@@ -95,9 +96,9 @@ const AdminDashboard = () => {
                 <div className="admin-stat-value">{s.value}</div>
               </div>
               <div className={`admin-stat-icon admin-stat-icon--${s.icon}`}>
-                 {s.icon === 'users' && '👥'}
-                 {s.icon === 'trophy' && '🏆'}
-                 {s.icon === 'game' && '🎮'}
+                 {s.icon === 'users' && <Users size={20} />}
+                 {s.icon === 'trophy' && <Trophy size={20} />}
+                 {s.icon === 'game' && <Gamepad2 size={20} />}
               </div>
             </div>
             <div className="admin-stat-bottom">
@@ -135,10 +136,10 @@ const AdminDashboard = () => {
                     <td>
                       <div className="admin-activity-cell">
                         <span className={`admin-mini-ic admin-mini-ic--${a.icon}`}>
-                           {a.icon === 'tournament' && '+'}
-                           {a.icon === 'dispute' && '🚩'}
-                           {a.icon === 'organizer' && '💼'}
-                           {a.icon === 'registration' && '→'}
+                           {a.icon === 'tournament' && <Plus size={16} />}
+                           {a.icon === 'dispute' && <Flag size={16} />}
+                           {a.icon === 'organizer' && <Briefcase size={16} />}
+                           {a.icon === 'registration' && <ArrowRight size={16} />}
                         </span>
                         <span className="admin-activity-title">{a.title}</span>
                       </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import AdminLayout from "./AdminLayout";
+import { Download, Plus, Edit2, X } from "lucide-react";
 import "./AdminDashboard.css"; // Reuse shared styles
 
 type UserRole = "Player" | "Organizer" | "Admin";
@@ -54,10 +55,10 @@ const AdminUsers = () => {
         </div>
         <div className="admin-header-actions">
           <button className="admin-btn admin-btn--secondary">
-            <span className="admin-btn-ic">⭳</span> Export Data
+            <Download className="admin-btn-ic" size={16} /> Export Data
           </button>
           <button className="admin-btn admin-btn--primary">
-            <span className="admin-btn-ic">+</span> Add User
+            <Plus className="admin-btn-ic" size={16} /> Add User
           </button>
         </div>
       </header>
@@ -104,10 +105,10 @@ const AdminUsers = () => {
                     <td style={{ textAlign: 'right' }}>
                       <div className="admin-approval-actions" style={{ justifyContent: 'flex-end' }}>
                         <button className="admin-icon-btn admin-icon-btn--outline" style={{ background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }} title="Edit User">
-                           <span style={{ fontSize: 12 }}>✏️</span>
+                           <Edit2 size={14} />
                         </button>
                         <button className="admin-icon-btn admin-icon-btn--no" title="Delete User">
-                          ✕
+                          <X size={14} />
                         </button>
                       </div>
                     </td>

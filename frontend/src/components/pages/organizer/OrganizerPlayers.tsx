@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./OrganizerPlayers.css";
+import { Search, Download, Users, MoreVertical } from "lucide-react";
 
 type PlayerStatus = "Active" | "Banned" | "Pending";
 
@@ -43,7 +44,7 @@ const OrganizerPlayers = () => {
         </div>
         <div className="op-actions">
            <div className="op-searchWrap">
-             <span className="op-searchIcon">🔍</span>
+             <Search className="op-searchIcon" size={18} />
              <input 
                className="op-search" 
                placeholder="Search players by name, username, or email..." 
@@ -52,7 +53,7 @@ const OrganizerPlayers = () => {
              />
            </div>
            <button className="op-export-btn">
-             <span className="op-icon">📥</span> Export CSV
+             <Download className="op-icon" size={16} /> Export CSV
            </button>
         </div>
       </div>
@@ -109,7 +110,7 @@ const OrganizerPlayers = () => {
                   </td>
                   <td className="op-actions-cell">
                     <button className="op-btn-sm op-btn-sm--outline">View</button>
-                    <button className="op-dots" title="More Options">⋮</button>
+                    <button className="op-dots" title="More Options"><MoreVertical size={16} /></button>
                   </td>
                 </tr>
               ))}
@@ -117,7 +118,7 @@ const OrganizerPlayers = () => {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="op-empty">
-                    <div className="op-empty-icon">👥</div>
+                    <Users className="op-empty-icon" size={48} />
                     <p>No players found matching your criteria.</p>
                   </td>
                 </tr>

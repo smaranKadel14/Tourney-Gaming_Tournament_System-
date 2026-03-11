@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./OrganizerSettings.css";
+import { User, Palette, Bell, Lock } from "lucide-react";
 
 const OrganizerSettings = () => {
   const [activeTab, setActiveTab] = useState<"Profile" | "Appearance" | "Notifications" | "Security">("Profile");
@@ -32,25 +33,25 @@ const OrganizerSettings = () => {
             className={`os-tab ${activeTab === "Profile" ? "os-tab--active" : ""}`}
             onClick={() => setActiveTab("Profile")}
           >
-            <span className="os-icon">👤</span> Profile Information
+            <User className="os-icon" size={18} /> Profile Information
           </button>
           <button 
             className={`os-tab ${activeTab === "Appearance" ? "os-tab--active" : ""}`}
             onClick={() => setActiveTab("Appearance")}
           >
-            <span className="os-icon">🎨</span> Appearance
+            <Palette className="os-icon" size={18} /> Appearance
           </button>
           <button 
             className={`os-tab ${activeTab === "Notifications" ? "os-tab--active" : ""}`}
             onClick={() => setActiveTab("Notifications")}
           >
-            <span className="os-icon">🔔</span> Notifications
+            <Bell className="os-icon" size={18} /> Notifications
           </button>
           <button 
             className={`os-tab ${activeTab === "Security" ? "os-tab--active" : ""}`}
             onClick={() => setActiveTab("Security")}
           >
-            <span className="os-icon">🔒</span> Security & Privacy
+            <Lock className="os-icon" size={18} /> Security & Privacy
           </button>
         </div>
 

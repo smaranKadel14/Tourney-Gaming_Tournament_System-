@@ -8,6 +8,7 @@ import {
     initiateEsewaPayment,
     esewaSuccess,
     esewaFailure,
+    deleteTournament,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 
@@ -19,6 +20,7 @@ router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
 router.post("/:id/register", protect, registerForTournament);
 router.post("/:id/esewa-payment", protect, initiateEsewaPayment);
+router.delete("/:id", protect, authorize("admin", "organizer"), deleteTournament);
 router.get("/esewa/success", esewaSuccess);
 router.get("/esewa/failure", esewaFailure);
 

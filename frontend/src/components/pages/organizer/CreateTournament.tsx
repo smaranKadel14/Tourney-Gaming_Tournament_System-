@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./CreateTournament.css";
 import { getToken } from "../../../utils/auth";
+import { Loader2 } from "lucide-react";
 
 interface Game {
   _id: string;
@@ -180,9 +181,9 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
         </div>
 
         <div className="ct-actions">
-          <button type="submit" className="ct-submit-btn" disabled={loading}>
-            <span>{loading ? "Creating... ⏳" : "Create Tournament"}</span>
-            {!loading && <span style={{fontSize: "1.2rem"}}></span>}
+          <button type="submit" className="ct-submit-btn" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            {loading && <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />}
+            <span>{loading ? "Creating..." : "Create Tournament"}</span>
           </button>
         </div>
       </form>

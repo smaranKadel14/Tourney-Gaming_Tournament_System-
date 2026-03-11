@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus } from "lucide-react";
 import { clearAuthUser } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -33,37 +34,37 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
             className={`admin-nav-item ${isActive('/admin') || isActive('/admin/dashboard') ? 'admin-nav-item--active' : ''}`}
             onClick={() => navigate('/admin')}
           >
-            <span className="admin-nav-ic">▦</span> Dashboard
+            <LayoutDashboard className="admin-nav-ic" size={16} /> Dashboard
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/users') ? 'admin-nav-item--active' : ''}`}
             onClick={() => navigate('/admin/users')}
           >
-            <span className="admin-nav-ic">👥</span> Users
+            <Users className="admin-nav-ic" size={16} /> Users
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/tournaments') ? 'admin-nav-item--active' : ''}`}
             onClick={() => navigate('/admin/tournaments')}
           >
-            <span className="admin-nav-ic">🏆</span> Tournaments
+            <Trophy className="admin-nav-ic" size={16} /> Tournaments
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/logs') ? 'admin-nav-item--active' : ''}`}
             onClick={() => navigate('/admin/logs')}
           >
-            <span className="admin-nav-ic">📄</span> System Logs
+            <FileText className="admin-nav-ic" size={16} /> System Logs
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/settings') ? 'admin-nav-item--active' : ''}`}
             onClick={() => navigate('/admin/settings')}
           >
-            <span className="admin-nav-ic">⚙️</span> Settings
+            <Settings className="admin-nav-ic" size={16} /> Settings
           </button>
         </nav>
 
         <div className="admin-sidebar-bottom">
           <button onClick={handleLogout} className="admin-logout">
-            <span className="admin-nav-ic">⟵</span> Logout
+            <LogOut className="admin-nav-ic" size={16} /> Logout
           </button>
         </div>
       </aside>
@@ -77,7 +78,7 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
           <div className="admin-topbar-right">
             {onSearch && (
               <div className="admin-search-wrap">
-                <span className="admin-search-ic">🔎</span>
+                <Search className="admin-search-ic" size={16} />
                 <input
                   value={search || ''}
                   onChange={(e) => onSearch(e.target.value)}
@@ -88,7 +89,7 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
             )}
             {showInvite && (
               <button className="admin-btn admin-btn--secondary">
-                <span className="admin-btn-ic">👤+</span> Invite User
+                <UserPlus className="admin-btn-ic" size={16} /> Invite User
               </button>
             )}
           </div>
