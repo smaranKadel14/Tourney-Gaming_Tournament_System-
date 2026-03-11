@@ -1,5 +1,7 @@
 import "./MyTournaments.css";
 import { useState } from "react";
+import { Search, Filter, FolderOpen, MoreVertical, Calendar, Users, Trash2 } from "lucide-react";
+import { getToken } from "../../../utils/auth";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
@@ -29,6 +31,35 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
     return matchSearch && matchTab;
   });
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+         // Assuming parent component refreshes or we need to pass a callback
+         // For now we will just reload if successful to sync state, 
+         // or we can invoke a passed in `onDelete` property.
+         window.location.reload();
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to delete: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting tournament:", error);
+      alert("Server error. Could not delete tournament.");
+    }
+  };
+
   return (
     <div className="mt-container animate-fade-in">
       <div className="mt-header">
@@ -38,7 +69,7 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
         </div>
         <div className="mt-actions">
            <div className="mt-searchWrap">
-             <span className="mt-searchIcon">🔍</span>
+             <Search className="mt-searchIcon" size={18} />
              <input 
                className="mt-search" 
                placeholder="Search..." 
@@ -47,7 +78,7 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
              />
            </div>
            <button className="mt-filter-btn">
-             <span>⏳</span> Filter
+             <Filter size={16} style={{ marginRight: '6px' }} /> Filter
            </button>
         </div>
       </div>
@@ -74,7 +105,7 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
           </div>
         ) : filtered.length === 0 ? (
           <div className="mt-empty">
-            <div className="mt-empty-icon">📂</div>
+            <FolderOpen className="mt-empty-icon" size={48} />
             <h3>No Tournaments Found</h3>
             <p>Try adjusting your search or filters.</p>
             {(activeTab === "All" && !search) && (
@@ -91,7 +122,9 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
                   <span className={`mt-status-dot mt-status-dot--${badgeClass(t.status)}`}></span>
                   {t.status}
                 </span>
-                <button className="od__dots" title="Options">⋮</button>
+                <button className="od__dots" title="Delete" onClick={() => handleDelete(t.id, t.name)}>
+                  <Trash2 size={16} color="var(--status-danger-text)" />
+                </button>
               </div>
               <div className="mt-card-body">
                 <h3 className="mt-card-title" title={t.name}>{t.name}</h3>
@@ -101,10 +134,10 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
 
                 <div className="mt-card-meta">
                   <div className="mt-meta-item">
-                    <span className="mt-icon">📅</span> {t.date}
+                    <Calendar className="mt-icon" size={16} /> {t.date}
                   </div>
                   <div className="mt-meta-item">
-                    <span className="mt-icon">👥</span> {t.participants} Players
+                    <Users className="mt-icon" size={16} /> {t.participants} Players
                   </div>
                 </div>
               </div>

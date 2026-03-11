@@ -253,9 +253,6 @@
 .od__statIcon {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  background: var(--accent-transparent);
-  border: 1px solid var(--border-active);
   display: grid;
   place-items: center;
 }

@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import AdminLayout from "./AdminLayout";
+import { Download, Plus, Edit2, X, Gamepad2, Trophy } from "lucide-react";
+import { getToken } from "../../../utils/auth";
 import "./AdminDashboard.css"; // Reuse shared styling
 
 type TournamentStatus = "upcoming" | "ongoing" | "completed";
@@ -10,20 +12,42 @@ type TournamentItem = {
   organizer: string;
   startDate: string;
   status: TournamentStatus;
-  gameIcon: string;
+  gameIcon: React.ReactNode;
   gameColor: string;
 };
 
 const AdminTournaments = () => {
   const [search, setSearch] = useState("");
+  const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tournaments: TournamentItem[] = useMemo(() => [
-    { id: "t1", title: "Summer Championship 2024", organizer: "EpicEvents LLC", startDate: "Jun 15, 2024", status: "upcoming", gameIcon: "🎮", gameColor: "#fb923c" },
-    { id: "t2", title: "Weekly Pro League", organizer: "Sarah Smith", startDate: "Mar 01, 2024", status: "ongoing", gameIcon: "🏆", gameColor: "#c084fc" },
-    { id: "t3", title: "Winter Invitational", organizer: "Alex Johnson", startDate: "Dec 10, 2023", status: "completed", gameIcon: "🥶", gameColor: "#60a5fa" },
-    { id: "t4", title: "Amateur Qualifier #3", organizer: "Gaming Hub", startDate: "Aug 05, 2024", status: "upcoming", gameIcon: "🎯", gameColor: "#ef4444" },
-    { id: "t5", title: "Regional Finals", organizer: "EpicEvents LLC", startDate: "Jan 15, 2024", status: "completed", gameIcon: "🌟", gameColor: "#fbbf24" },
-  ], []);
+  // Fetch all tournaments on mount
+  const fetchTournaments = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/tournaments");
+      if (res.ok) {
+        const data = await res.json();
+        const formatted = data.map((t: any) => ({
+          id: t._id,
+          title: t.title,
+          organizer: t.organizer?.name || "Unknown",
+          startDate: new Date(t.startDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+          status: t.status === "completed" ? "completed" : t.status === "ongoing" ? "ongoing" : "upcoming",
+          gameIcon: t.game?.title.includes("Soccer") ? <Gamepad2 size={24} /> : <Trophy size={24} />,
+          gameColor: "#fb923c"
+        }));
+        setTournaments(formatted);
+      }
+    } catch (error) {
+      console.error("Error fetching admin tournaments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTournaments();
+  }, []);
 
   const filteredTournaments = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -49,6 +73,33 @@ const AdminTournaments = () => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${title}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+      const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        // Remove from state
+        setTournaments(prev => prev.filter(t => t.id !== id));
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to delete: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting tournament:", error);
+      alert("Server error. Could not delete tournament.");
+    }
+  };
+
   return (
     <AdminLayout breadcrumb="Tournaments" search={search} onSearch={setSearch}>
       <header className="admin-header">
@@ -58,10 +109,10 @@ const AdminTournaments = () => {
         </div>
         <div className="admin-header-actions">
           <button className="admin-btn admin-btn--secondary">
-            <span className="admin-btn-ic">⭳</span> Export Data
+            <Download className="admin-btn-ic" size={16} /> Export Data
           </button>
           <button className="admin-btn admin-btn--primary">
-            <span className="admin-btn-ic">+</span> Create Tournament
+            <Plus className="admin-btn-ic" size={16} /> Create Tournament
           </button>
         </div>
       </header>
@@ -85,10 +136,23 @@ const AdminTournaments = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredTournaments.map((t) => (
-                  <tr key={t.id}>
-                    <td>
-                      <div className="admin-activity-cell">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '32px' }}>
+                      <span className="admin-td-muted">Loading tournaments...</span>
+                    </td>
+                  </tr>
+                ) : filteredTournaments.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '32px' }}>
+                      <span className="admin-td-muted">No tournaments found.</span>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTournaments.map((t) => (
+                    <tr key={t.id}>
+                      <td>
+                        <div className="admin-activity-cell">
                         <div 
                           className="admin-avatar" 
                           style={{ 
@@ -112,15 +176,16 @@ const AdminTournaments = () => {
                     <td style={{ textAlign: 'right' }}>
                       <div className="admin-approval-actions" style={{ justifyContent: 'flex-end' }}>
                         <button className="admin-icon-btn admin-icon-btn--outline" style={{ background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }} title="Edit">
-                           <span style={{ fontSize: 12 }}>✏️</span>
+                           <Edit2 size={14} />
                         </button>
-                        <button className="admin-icon-btn admin-icon-btn--no" title="Delete">
-                          ✕
+                        <button className="admin-icon-btn admin-icon-btn--no" title="Delete" onClick={() => handleDelete(t.id, t.title)}>
+                          <X size={14} />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>

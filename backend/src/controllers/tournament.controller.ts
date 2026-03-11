@@ -183,6 +183,36 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
     }
 };
 
+// @desc    Delete a tournament
+// @route   DELETE /api/tournaments/:id
+// @access  Private (Admin or Organizer)
+export const deleteTournament = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        // Check ownership if user is organizer
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized to delete this tournament" });
+            return;
+        }
+
+        await Tournament.findByIdAndDelete(tournamentId);
+
+        res.json({ message: "Tournament removed successfully" });
+    } catch (error) {
+        console.error("Error deleting tournament:", error);
+        res.status(500).json({ message: "Server error on deleting tournament" });
+    }
+};
+
 // --- ESEWA INTEGRATION ---
 
 // Helper function to generate eSewa Signature

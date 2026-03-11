@@ -288,16 +288,15 @@
 .admin-stat-icon {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
 }
 
-.admin-stat-icon--users { background: rgba(37, 99, 235, 0.15); color: #60a5fa; }
-.admin-stat-icon--trophy { background: rgba(147, 51, 234, 0.15); color: #c084fc; }
-.admin-stat-icon--game { background: rgba(234, 88, 12, 0.15); color: #fb923c; }
+.admin-stat-icon--users { color: #60a5fa; }
+.admin-stat-icon--trophy { color: #c084fc; }
+.admin-stat-icon--game { color: #fb923c; }
 
 .admin-stat-bottom {
   display: flex;

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import AdminLayout from "./AdminLayout";
+import { Download, RefreshCw, Lock, Settings, User, Trophy } from "lucide-react";
 import "./AdminDashboard.css";
 
 type LogSeverity = "info" | "success" | "warning" | "error";
@@ -14,11 +15,11 @@ type LogItem = {
   details: string;
 };
 
-const categoryIcon: Record<LogItem["category"], string> = {
-  AUTH: "🔐",
-  SYSTEM: "⚙️",
-  USER: "👤",
-  TOURNAMENT: "🏆",
+const categoryIcon: Record<LogItem["category"], React.ReactNode> = {
+  AUTH: <Lock size={16} />,
+  SYSTEM: <Settings size={16} />,
+  USER: <User size={16} />,
+  TOURNAMENT: <Trophy size={16} />,
 };
 
 const categoryColor: Record<LogItem["category"], string> = {
@@ -87,10 +88,10 @@ const AdminLogs = () => {
         </div>
         <div className="admin-header-actions">
           <button className="admin-btn admin-btn--secondary">
-            <span className="admin-btn-ic">⭳</span> Export Logs
+            <Download className="admin-btn-ic" size={16} /> Export Logs
           </button>
           <button className="admin-btn admin-btn--primary">
-            <span className="admin-btn-ic">↻</span> Refresh
+            <RefreshCw className="admin-btn-ic" size={16} /> Refresh
           </button>
         </div>
       </header>
