@@ -7,6 +7,7 @@ import type { TournamentRow } from "./MyTournaments";
 import TournamentManager from "./TournamentManager";
 import OrganizerPlayers from "./OrganizerPlayers";
 import OrganizerSettings from "./OrganizerSettings";
+import NotificationDropdown from "./NotificationDropdown";
 import { 
   LayoutDashboard, 
   Plus, 
@@ -17,8 +18,8 @@ import {
   Search, 
   Bell, 
   Trophy, 
-  Play, 
-  Trash2 
+  DollarSign,
+  TrendingUp
 } from "lucide-react";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
@@ -36,6 +37,15 @@ const OrganizerDashboard = () => {
   const [profile, setProfile] = useState<{ fullName: string; email: string } | null>(null);
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<{
+    totalEarnings: number;
+    pendingRevenue: number;
+    totalPlayers: number;
+    totalTournaments: number;
+    trendData: Array<{ label: string; value: number }>;
+  } | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -100,6 +110,45 @@ const OrganizerDashboard = () => {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch("http://localhost:5000/api/tournaments/organizer/stats", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    const fetchUnreadCount = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch("http://localhost:5000/api/notifications", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.filter((n: any) => !n.isRead).length);
+        }
+      } catch (error) {
+        console.error("Error fetching notification count:", error);
+      }
+    };
+
+    if (activeView === "dashboard") {
+      fetchStats();
+      fetchUnreadCount();
+    }
+  }, [activeView]);
+
   const filtered = tournaments.filter((t) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -109,32 +158,6 @@ const OrganizerDashboard = () => {
       t.id.toLowerCase().includes(q)
     );
   });
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const token = getToken();
-      const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (res.ok) {
-        setTournaments(prev => prev.filter(t => t.id !== id));
-      } else {
-        const errorData = await res.json();
-        alert(`Failed to delete: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error("Error deleting tournament:", error);
-      alert("Server error. Could not delete tournament.");
-    }
-  };
 
   return (
     <div className="od">
@@ -211,9 +234,14 @@ const OrganizerDashboard = () => {
                 />
               </div>
 
-              <button className="od__bell" title="Notifications">
+              <button 
+                className="od__bell" 
+                title="Notifications"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
                 <Bell size={20} />
-                <span className="od__dot" />
+                {unreadCount > 0 && <span className="od__dot" />}
+                {showNotifications && <NotificationDropdown onClose={() => setShowNotifications(false)} />}
               </button>
 
               <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
@@ -234,102 +262,103 @@ const OrganizerDashboard = () => {
                   </div>
                   <div className="od__ghostIcon"><Trophy size={48} /></div>
                 </div>
-                <div className="od__statValue">{tournaments.length}</div>
-                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
+                <div className="od__statValue">{stats?.totalTournaments ?? tournaments.length}</div>
+                <div className="od__statChange">Across your history</div>
               </div>
 
               <div className="od__statCard">
                 <div className="od__statTop">
                   <div className="od__statLabel">
-                    <Play className="od__statIcon" size={18} /> Active Tournaments
-                  </div>
-                  <div className="od__ghostIcon"><Play size={48} /></div>
-                </div>
-                <div className="od__statValue">{tournaments.filter(t => t.status === "Live" || t.status === "Registrations Open").length}</div>
-                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
-              </div>
-
-              <div className="od__statCard">
-                <div className="od__statTop">
-                  <div className="od__statLabel">
-                    <Users className="od__statIcon" size={18} /> Registered Players
+                    <Users className="od__statIcon" size={18} /> Total Players
                   </div>
                   <div className="od__ghostIcon"><Users size={48} /></div>
                 </div>
-                <div className="od__statValue">{tournaments.reduce((sum, t) => sum + t.participants, 0)}</div>
-                <div className="od__statChange od__statChange--up">↗ Dynamic</div>
+                <div className="od__statValue">{stats?.totalPlayers ?? 0}</div>
+                <div className="od__statChange od__statChange--up">↗ Real-time</div>
+              </div>
+
+              <div className="od__statCard">
+                <div className="od__statTop">
+                  <div className="od__statLabel">
+                    <DollarSign className="od__statIcon" size={18} /> Total Earnings
+                  </div>
+                  <div className="od__ghostIcon"><DollarSign size={48} /></div>
+                </div>
+                <div className="od__statValue">Rs. {stats?.totalEarnings?.toLocaleString() ?? "0"}</div>
+                <div className="od__statChange od__statChange--up">↗ {((stats?.totalEarnings ?? 0) / (stats?.pendingRevenue || 1) * 100).toFixed(0)}% conversion</div>
               </div>
             </section>
 
-            {/* Table */}
-            <section className="od__panel">
-              <div className="od__panelHead">
-                <h2 className="od__panelTitle">Recent Tournaments</h2>
-                <button className="od__linkBtn">View All →</button>
-              </div>
+            {/* Analytics & Table */}
+            <div className="od__grid2">
+              <section className="od__panel od__chartPanel">
+                <div className="od__panelHead">
+                  <h2 className="od__panelTitle">Registration Trends</h2>
+                  <div className="od__statLabel"><TrendingUp size={14} /> Last 6 Months</div>
+                </div>
+                <div className="od__chartWrap">
+                  {stats?.trendData ? (
+                    <div className="od__svgChart">
+                      {stats.trendData.map((d, i) => {
+                        const maxVal = Math.max(...stats.trendData.map(v => v.value), 5);
+                        const height = (d.value / maxVal) * 100;
+                        return (
+                          <div key={i} className="od__barGroup">
+                            <div className="od__bar" style={{ height: `${height}%` }}>
+                              <div className="od__barTooltip">{d.value} players</div>
+                            </div>
+                            <span className="od__barLabel">{d.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#555' }}>Loading trends...</div>
+                  )}
+                </div>
+              </section>
 
-              <div className="od__tableWrap">
-                {loading ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
-                ) : (
-                <table className="od__table">
-                  <thead>
-                    <tr>
-                      <th>TOURNAMENT NAME</th>
-                      <th>GAME</th>
-                      <th>DATE</th>
-                      <th>STATUS</th>
-                      <th>PARTICIPANTS</th>
-                      <th className="od__thRight">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((t) => (
-                      <tr key={t.id}>
-                        <td>
-                          <div className="od__tName">{t.name}</div>
-                          <div className="od__tId">ID: #{t.id}</div>
-                        </td>
-                        <td className="od__muted">{t.game}</td>
-                        <td className="od__muted">{t.date}</td>
-                        <td>
-                          <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
-                            {t.status}
-                          </span>
-                        </td>
-                        <td className="od__muted">{t.participants}</td>
-                        <td className="od__actions">
-                          <button className="od__dots" title="Delete" onClick={() => handleDelete(t.id, t.name)}>
-                            <Trash2 size={16} color="var(--status-danger-text)" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-
-                    {filtered.length === 0 && (
+              <section className="od__panel">
+                <div className="od__panelHead">
+                  <h2 className="od__panelTitle">Recent Tournaments</h2>
+                  <button className="od__linkBtn" onClick={() => setActiveView("my-tournaments")}>View All →</button>
+                </div>
+                <div className="od__tableWrap">
+                  {loading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Loading tournaments...</div>
+                  ) : (
+                  <table className="od__table">
+                    <thead>
                       <tr>
-                        <td colSpan={6} className="od__empty">
-                          No tournaments found.
-                        </td>
+                        <th>TOURNAMENT</th>
+                        <th>STATUS</th>
+                        <th className="od__thRight">PLAYERS</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-                )}
-              </div>
-
-              <div className="od__tableFooter">
-                <div className="od__mutedSmall">
-                  Showing {Math.min(filtered.length, 4)} of {tournaments.length} tournaments
+                    </thead>
+                    <tbody>
+                      {filtered.slice(0, 5).map((t) => (
+                        <tr key={t.id}>
+                          <td>
+                            <div className="od__tName">{t.name}</div>
+                            <div className="od__tId">{t.game}</div>
+                          </td>
+                          <td>
+                            <span className={`od__badge od__badge--${badgeClass(t.status)}`}>
+                              {t.status}
+                            </span>
+                          </td>
+                          <td className="od__muted od__thRight">{t.participants}</td>
+                        </tr>
+                      ))}
+                      {filtered.length === 0 && (
+                        <tr><td colSpan={3} className="od__empty">No tournaments found.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  )}
                 </div>
-                <div className="od__pager">
-                  <button className="od__pagerBtn" disabled>
-                    Previous
-                  </button>
-                  <button className="od__pagerBtn">Next</button>
-                </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </>
         ) : activeView === "my-tournaments" ? (
           <MyTournaments 

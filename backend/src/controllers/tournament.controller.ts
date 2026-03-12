@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
 import Tournament from "../models/Tournament";
 import Registration from "../models/Registration";
-import CryptoJS from "crypto-js";
+import { Request, Response } from "express";
+import { createNotification } from "./notification.controller";
 import { v4 as uuidv4 } from "uuid";
 
 // @desc    Get all tournaments
@@ -108,6 +108,91 @@ export const registerForTournament = async (req: Request, res: Response): Promis
     }
 };
 
+// @desc    Get dashboard stats for organizers
+// @route   GET /api/tournaments/organizer/stats
+// @access  Private (Organizer/Admin)
+export const getOrganizerStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const organizerId = (req as any).user?.id;
+        
+        // 1. Get tournaments owned by organizer
+        const tournaments = await Tournament.find({ organizer: organizerId });
+        const tournamentIds = tournaments.map(t => t._id);
+
+        // 2. Aggregate earnings from completed payments
+        const completedRegistrations = await Registration.find({
+            tournament: { $in: tournamentIds },
+            paymentStatus: "completed"
+        }).populate("tournament", "registrationFee");
+
+        const totalEarnings = completedRegistrations.reduce((sum, reg: any) => {
+            return sum + (reg.tournament?.registrationFee || 0);
+        }, 0);
+
+        // 3. Aggregate pending revenue
+        const pendingRegistrations = await Registration.find({
+            tournament: { $in: tournamentIds },
+            status: "confirmed",
+            paymentStatus: { $ne: "completed" }
+        }).populate("tournament", "registrationFee");
+
+        const pendingRevenue = pendingRegistrations.reduce((sum, reg: any) => {
+            return sum + (reg.tournament?.registrationFee || 0);
+        }, 0);
+
+        // 4. Monthly registration trends (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        sixMonthsAgo.setDate(1);
+
+        const trends = await Registration.aggregate([
+            {
+                $match: {
+                    tournament: { $in: tournamentIds },
+                    createdAt: { $gte: sixMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: "$createdAt" },
+                        year: { $year: "$createdAt" }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
+        ]);
+
+        // Format trends for the frontend
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const trendData = [];
+        for (let i = 0; i < 6; i++) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - (5 - i));
+            const month = d.getMonth() + 1;
+            const year = d.getFullYear();
+            
+            const match = trends.find(t => t._id.month === month && t._id.year === year);
+            trendData.push({
+                label: monthNames[month - 1],
+                value: match ? match.count : 0
+            });
+        }
+
+        res.json({
+            totalEarnings,
+            pendingRevenue,
+            totalPlayers: await Registration.countDocuments({ tournament: { $in: tournamentIds }, status: "confirmed" }),
+            totalTournaments: tournaments.length,
+            trendData
+        });
+    } catch (error) {
+        console.error("Error fetching organizer stats:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 // @desc    Get tournaments for the logged in organizer
 // @route   GET /api/tournaments/organizer/me
 // @access  Private (Organizer/Admin)
@@ -148,7 +233,7 @@ export const getOrganizerTournaments = async (req: Request, res: Response): Prom
     }
 };
 
-// @desc    Get all unique players registered across organizer's tournaments
+// @desc    Get all player registrations across organizer's tournaments (per-registration rows)
 // @route   GET /api/tournaments/organizer/players
 // @access  Private (Organizer/Admin)
 export const getOrganizerPlayers = async (req: Request, res: Response): Promise<void> => {
@@ -159,45 +244,87 @@ export const getOrganizerPlayers = async (req: Request, res: Response): Promise<
             return;
         }
 
-        // Get all tournament IDs owned by this organizer
-        const tournaments = await Tournament.find({ organizer: organizerId }).select("_id");
+        // Get all tournaments owned by this organizer
+        const tournaments = await Tournament.find({ organizer: organizerId }).select("_id title");
         const tournamentIds = tournaments.map(t => t._id);
+        const tournamentMap: Record<string, string> = {};
+        tournaments.forEach((t: any) => { tournamentMap[t._id.toString()] = t.title; });
 
         if (tournamentIds.length === 0) {
             res.json([]);
             return;
         }
 
-        // Aggregate: group registrations by user, count how many tournaments each user joined
-        const playerAgg = await Registration.aggregate([
-            { $match: { tournament: { $in: tournamentIds } } },
-            { $group: { _id: "$user", tournamentsPlayed: { $sum: 1 }, latestStatus: { $last: "$status" } } },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "userInfo"
-                }
-            },
-            { $unwind: "$userInfo" },
-            {
-                $project: {
-                    _id: 1,
-                    tournamentsPlayed: 1,
-                    latestStatus: 1,
-                    fullName: "$userInfo.fullName",
-                    email: "$userInfo.email",
-                    avatarUrl: "$userInfo.avatarUrl",
-                    createdAt: "$userInfo.createdAt"
-                }
-            },
-            { $sort: { tournamentsPlayed: -1 } }
-        ]);
+        // One row per registration — populate user and tournament info
+        const registrations = await Registration.find({ tournament: { $in: tournamentIds } })
+            .populate("user", "fullName email avatarUrl createdAt")
+            .populate("tournament", "title")
+            .sort({ createdAt: -1 });
 
-        res.json(playerAgg);
+        const result = registrations.map((r: any) => ({
+            registrationId: r._id,
+            tournamentId: r.tournament?._id,
+            tournamentName: r.tournament?.title || "Unknown Tournament",
+            status: r.status,
+            paymentStatus: r.paymentStatus,
+            createdAt: r.createdAt,
+            user: {
+                id: r.user?._id,
+                fullName: r.user?.fullName || "Unknown",
+                email: r.user?.email || "",
+                avatarUrl: r.user?.avatarUrl,
+                memberSince: r.user?.createdAt,
+            },
+        }));
+
+        res.json(result);
     } catch (error) {
         console.error("Error fetching organizer players:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// @desc    Accept or reject a registration
+// @route   PATCH /api/tournaments/:id/registrations/:regId
+// @access  Private (Organizer/Admin)
+export const updateRegistrationStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id: tournamentId, regId } = req.params;
+        const { status } = req.body; // "confirmed" | "rejected"
+        const user = (req as any).user;
+
+        if (!["confirmed", "rejected"].includes(status)) {
+            res.status(400).json({ message: "Status must be 'confirmed' or 'rejected'" });
+            return;
+        }
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) { res.status(404).json({ message: "Tournament not found" }); return; }
+
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized" }); return;
+        }
+
+        const registration = await Registration.findOneAndUpdate(
+            { _id: regId, tournament: tournamentId },
+            { status },
+            { new: true }
+        );
+
+        if (!registration) { res.status(404).json({ message: "Registration not found" }); return; }
+
+        // Trigger notification for the player
+        const tournamentTitle = tournament.title;
+        await createNotification({
+            recipient: registration.user.toString(),
+            type: "registration",
+            message: `Your registration for ${tournamentTitle} has been ${status}.`,
+            link: `/tournament/${tournamentId}`
+        });
+
+        res.json({ message: `Registration ${status}`, registration });
+    } catch (error) {
+        console.error("Error updating registration status:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
