@@ -124,9 +124,80 @@ export const getOrganizerTournaments = async (req: Request, res: Response): Prom
             .populate("game", "title imageUrl")
             .sort({ startDate: 1 });
 
-        res.json(tournaments);
+        // Count confirmed registrations for each tournament
+        const tournamentIds = tournaments.map(t => t._id);
+        const registrationCounts = await Registration.aggregate([
+            { $match: { tournament: { $in: tournamentIds }, status: "confirmed" } },
+            { $group: { _id: "$tournament", count: { $sum: 1 } } }
+        ]);
+
+        const countMap: Record<string, number> = {};
+        registrationCounts.forEach((r: any) => {
+            countMap[r._id.toString()] = r.count;
+        });
+
+        const result = tournaments.map(t => ({
+            ...(t as any).toObject(),
+            participantCount: countMap[t._id.toString()] ?? 0,
+        }));
+
+        res.json(result);
     } catch (error) {
         console.error("Error fetching organizer tournaments:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// @desc    Get all unique players registered across organizer's tournaments
+// @route   GET /api/tournaments/organizer/players
+// @access  Private (Organizer/Admin)
+export const getOrganizerPlayers = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const organizerId = (req as any).user?.id;
+        if (!organizerId) {
+            res.status(401).json({ message: "Not authorized" });
+            return;
+        }
+
+        // Get all tournament IDs owned by this organizer
+        const tournaments = await Tournament.find({ organizer: organizerId }).select("_id");
+        const tournamentIds = tournaments.map(t => t._id);
+
+        if (tournamentIds.length === 0) {
+            res.json([]);
+            return;
+        }
+
+        // Aggregate: group registrations by user, count how many tournaments each user joined
+        const playerAgg = await Registration.aggregate([
+            { $match: { tournament: { $in: tournamentIds } } },
+            { $group: { _id: "$user", tournamentsPlayed: { $sum: 1 }, latestStatus: { $last: "$status" } } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            { $unwind: "$userInfo" },
+            {
+                $project: {
+                    _id: 1,
+                    tournamentsPlayed: 1,
+                    latestStatus: 1,
+                    fullName: "$userInfo.fullName",
+                    email: "$userInfo.email",
+                    avatarUrl: "$userInfo.avatarUrl",
+                    createdAt: "$userInfo.createdAt"
+                }
+            },
+            { $sort: { tournamentsPlayed: -1 } }
+        ]);
+
+        res.json(playerAgg);
+    } catch (error) {
+        console.error("Error fetching organizer players:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -210,6 +281,75 @@ export const deleteTournament = async (req: Request, res: Response): Promise<voi
     } catch (error) {
         console.error("Error deleting tournament:", error);
         res.status(500).json({ message: "Server error on deleting tournament" });
+    }
+};
+
+// @desc    Update a tournament
+// @route   PUT /api/tournaments/:id
+// @access  Private (Organizer/Admin)
+export const updateTournament = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized to edit this tournament" });
+            return;
+        }
+
+        const allowed = [
+            "title", "description", "startDate", "endDate", "location",
+            "registrationDeadline", "prizePool", "rules", "maxParticipants",
+            "imageUrl", "status", "registrationFee", "game"
+        ];
+
+        allowed.forEach(field => {
+            if (req.body[field] !== undefined) {
+                (tournament as any)[field] = req.body[field];
+            }
+        });
+
+        const updated = await tournament.save();
+        res.json(updated);
+    } catch (error: any) {
+        console.error("Error updating tournament:", error);
+        res.status(500).json({ message: "Server error", details: error.message });
+    }
+};
+
+// @desc    Get registrations for a specific tournament
+// @route   GET /api/tournaments/:id/registrations
+// @access  Private (Organizer/Admin)
+export const getTournamentRegistrations = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized to view registrations for this tournament" });
+            return;
+        }
+
+        const registrations = await Registration.find({ tournament: tournamentId })
+            .populate("user", "fullName email avatarUrl")
+            .sort({ createdAt: -1 });
+
+        res.json(registrations);
+    } catch (error) {
+        console.error("Error fetching tournament registrations:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };
 

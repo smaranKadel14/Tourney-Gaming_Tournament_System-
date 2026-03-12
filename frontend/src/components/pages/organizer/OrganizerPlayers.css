@@ -369,6 +369,21 @@
     margin-bottom: 12px;
 }
 
+.op-loader {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: op-spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes op-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
 .op-tableFooter {
     display: flex;
     justify-content: space-between;
