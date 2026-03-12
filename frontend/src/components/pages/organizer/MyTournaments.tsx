@@ -1,28 +1,41 @@
 import "./MyTournaments.css";
 import { useState } from "react";
-import { Search, Filter, FolderOpen, MoreVertical, Calendar, Users, Trash2 } from "lucide-react";
+import { Search, Filter, FolderOpen, Calendar, Users, Trash2 } from "lucide-react";
 import { getToken } from "../../../utils/auth";
+import TournamentViewModal from "./TournamentViewModal";
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
-type TournamentRow = {
+export type TournamentRow = {
   id: string;
   name: string;
   game: string;
   date: string;
   status: TournamentStatus;
-  participants: string;
+  participants: number;
+  // extended fields passed from parent for modal / manager
+  endDate?: string;
+  location?: string;
+  registrationDeadline?: string;
+  prizePool?: string;
+  description?: string;
+  maxParticipants?: number;
+  registrationFee?: number;
+  imageUrl?: string;
 };
 
 interface MyTournamentsProps {
   tournaments: TournamentRow[];
   loading: boolean;
   onCreateNew?: () => void;
+  onManage?: (tournament: TournamentRow) => void;
+  onDeleteSuccess?: (id: string) => void;
 }
 
-const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps) => {
+const MyTournaments = ({ tournaments, loading, onCreateNew, onManage, onDeleteSuccess }: MyTournamentsProps) => {
   const [activeTab, setActiveTab] = useState<"All" | TournamentStatus>("All");
   const [search, setSearch] = useState("");
+  const [viewingTournament, setViewingTournament] = useState<TournamentRow | null>(null);
 
   const filtered = tournaments.filter((t) => {
     const q = search.trim().toLowerCase();
@@ -32,24 +45,15 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
   });
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
     try {
       const token = getToken();
       const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (res.ok) {
-         // Assuming parent component refreshes or we need to pass a callback
-         // For now we will just reload if successful to sync state, 
-         // or we can invoke a passed in `onDelete` property.
-         window.location.reload();
+        onDeleteSuccess ? onDeleteSuccess(id) : window.location.reload();
       } else {
         const errorData = await res.json();
         alert(`Failed to delete: ${errorData.message}`);
@@ -62,6 +66,14 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
 
   return (
     <div className="mt-container animate-fade-in">
+      {/* View Modal */}
+      {viewingTournament && (
+        <TournamentViewModal
+          tournament={viewingTournament}
+          onClose={() => setViewingTournament(null)}
+        />
+      )}
+
       <div className="mt-header">
         <div>
           <h2 className="mt-title">My Tournaments</h2>
@@ -70,11 +82,11 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
         <div className="mt-actions">
            <div className="mt-searchWrap">
              <Search className="mt-searchIcon" size={18} />
-             <input 
-               className="mt-search" 
-               placeholder="Search..." 
-               value={search} 
-               onChange={(e) => setSearch(e.target.value)} 
+             <input
+               className="mt-search"
+               placeholder="Search..."
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
              />
            </div>
            <button className="mt-filter-btn">
@@ -82,7 +94,7 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
            </button>
         </div>
       </div>
-      
+
       <div className="mt-tabs">
         {["All", "Live", "Registrations Open", "Completed", "Draft"].map((tab) => (
           <button
@@ -129,7 +141,7 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
               <div className="mt-card-body">
                 <h3 className="mt-card-title" title={t.name}>{t.name}</h3>
                 <p className="mt-card-game">{t.game}</p>
-                
+
                 <div className="mt-divider"></div>
 
                 <div className="mt-card-meta">
@@ -142,9 +154,19 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
                 </div>
               </div>
               <div className="mt-card-footer">
-                <button className="mt-btn mt-btn--secondary">View</button>
+                <button
+                  className="mt-btn mt-btn--secondary"
+                  onClick={() => setViewingTournament(t)}
+                >
+                  View
+                </button>
                 <div className="mt-footer-right">
-                  <button className="mt-btn mt-btn--primary">Manage</button>
+                  <button
+                    className="mt-btn mt-btn--primary"
+                    onClick={() => onManage?.(t)}
+                  >
+                    Manage
+                  </button>
                 </div>
               </div>
             </div>
@@ -157,16 +179,11 @@ const MyTournaments = ({ tournaments, loading, onCreateNew }: MyTournamentsProps
 
 function badgeClass(status: string) {
   switch (status) {
-    case "Live":
-      return "live";
-    case "Registrations Open":
-      return "open";
-    case "Completed":
-      return "done";
-    case "Draft":
-      return "draft";
-    default:
-      return "draft";
+    case "Live":           return "live";
+    case "Registrations Open": return "open";
+    case "Completed":     return "done";
+    case "Draft":         return "draft";
+    default:              return "draft";
   }
 }
 

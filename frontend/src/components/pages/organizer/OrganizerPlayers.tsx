@@ -1,39 +1,85 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./OrganizerPlayers.css";
-import { Search, Download, Users, MoreVertical } from "lucide-react";
+import { Search, Download, Users } from "lucide-react";
+import { getToken } from "../../../utils/auth";
 
-type PlayerStatus = "Active" | "Banned" | "Pending";
+// Since the User model has no username field, we derive it from the email prefix
+const toUsername = (email: string) => email.split("@")[0];
+
+type PlayerStatus = "Active" | "Pending";
 
 type PlayerRow = {
   id: string;
   name: string;
   username: string;
   email: string;
+  avatarUrl?: string;
   tournamentsPlayed: number;
   joinDate: string;
   status: PlayerStatus;
 };
 
-// Dummy Data
-const DUMMY_PLAYERS: PlayerRow[] = [
-  { id: "P1002", name: "Sarah Connor", username: "termSlayer", email: "sarah@resistance.net", tournamentsPlayed: 14, joinDate: "Oct 12, 2025", status: "Active" },
-  { id: "P1005", name: "John Wick", username: "babaYaga", email: "john@continental.com", tournamentsPlayed: 42, joinDate: "Jan 15, 2026", status: "Active" },
-  { id: "P2041", name: "Ellen Ripley", username: "nukeItFromOrbit", email: "ripley@weyland.co", tournamentsPlayed: 3, joinDate: "Feb 02, 2026", status: "Active" },
-  { id: "P3099", name: "Arthur Morgan", username: "outlawStar", email: "arthur@vanderlinde.w", tournamentsPlayed: 8, joinDate: "Nov 30, 2025", status: "Pending" },
-  { id: "P4012", name: "Micah Bell", username: "rat23", email: "micah@van.der", tournamentsPlayed: 2, joinDate: "Dec 01, 2025", status: "Banned" },
-  { id: "P5501", name: "Lara Croft", username: "tombRaider", email: "lara@croft.org", tournamentsPlayed: 27, joinDate: "Sep 05, 2025", status: "Active" },
-];
-
 const OrganizerPlayers = () => {
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"All" | PlayerStatus>("All");
 
-  const filtered = DUMMY_PLAYERS.filter((p) => {
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch("http://localhost:5000/api/tournaments/organizer/players", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const formatted: PlayerRow[] = data.map((p: any) => ({
+            id: p._id,
+            name: p.fullName,
+            username: toUsername(p.email),
+            email: p.email,
+            avatarUrl: p.avatarUrl,
+            tournamentsPlayed: p.tournamentsPlayed,
+            joinDate: p.createdAt
+              ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+              : "—",
+            // "confirmed" = Active, everything else = Pending
+            status: p.latestStatus === "confirmed" ? "Active" : "Pending",
+          }));
+          setPlayers(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch players:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlayers();
+  }, []);
+
+  const filtered = players.filter((p) => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || p.name.toLowerCase().includes(q) || p.username.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
     const matchTab = activeTab === "All" || p.status === activeTab;
     return matchSearch && matchTab;
   });
+
+  const handleExportCSV = () => {
+    const rows = [
+      ["Name", "Email", "Username", "Tournaments Played", "Join Date", "Status"],
+      ...players.map(p => [p.name, p.email, p.username, p.tournamentsPlayed, p.joinDate, p.status]),
+    ];
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "players.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="op-container animate-fade-in">
@@ -45,28 +91,28 @@ const OrganizerPlayers = () => {
         <div className="op-actions">
            <div className="op-searchWrap">
              <Search className="op-searchIcon" size={18} />
-             <input 
-               className="op-search" 
-               placeholder="Search players by name, username, or email..." 
-               value={search} 
-               onChange={(e) => setSearch(e.target.value)} 
+             <input
+               className="op-search"
+               placeholder="Search players by name, username, or email..."
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
              />
            </div>
-           <button className="op-export-btn">
+           <button className="op-export-btn" onClick={handleExportCSV}>
              <Download className="op-icon" size={16} /> Export CSV
            </button>
         </div>
       </div>
-      
+
       <div className="op-tabs">
-        {["All", "Active", "Pending", "Banned"].map((tab) => (
+        {(["All", "Active", "Pending"] as const).map((tab) => (
           <button
             key={tab}
             className={`op-tab ${activeTab === tab ? "op-tab--active" : ""}`}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab)}
           >
             {tab} <span className="op-tab-count">
-              {tab === "All" ? DUMMY_PLAYERS.length : DUMMY_PLAYERS.filter(p => p.status === tab).length}
+              {tab === "All" ? players.length : players.filter(p => p.status === tab).length}
             </span>
           </button>
         ))}
@@ -78,58 +124,65 @@ const OrganizerPlayers = () => {
             <thead>
               <tr>
                 <th>PLAYER</th>
-                <th>CONTACT</th>
+                <th>EMAIL</th>
                 <th>TOURNAMENTS</th>
                 <th>JOIN DATE</th>
                 <th>STATUS</th>
-                <th className="op-thRight">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="op-playerInfo">
-                      <div className="op-avatar">{p.name.charAt(0)}</div>
-                      <div>
-                        <div className="op-pName">{p.name}</div>
-                        <div className="op-pUsername">@{p.username}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="op-muted">{p.email}</td>
-                  <td className="op-muted">
-                    <span className="op-statBadge">{p.tournamentsPlayed} Events</span>
-                  </td>
-                  <td className="op-muted">{p.joinDate}</td>
-                  <td>
-                    <span className={`op__badge op__badge--${p.status.toLowerCase()}`}>
-                      <span className={`op-status-dot op-status-dot--${p.status.toLowerCase()}`}></span>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="op-actions-cell">
-                    <button className="op-btn-sm op-btn-sm--outline">View</button>
-                    <button className="op-dots" title="More Options"><MoreVertical size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-
-              {filtered.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={6} className="op-empty">
-                    <Users className="op-empty-icon" size={48} />
-                    <p>No players found matching your criteria.</p>
+                  <td colSpan={5} className="op-empty">
+                    <div className="op-loader" />
+                    <p>Loading players...</p>
                   </td>
                 </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="op-empty">
+                    <Users className="op-empty-icon" size={48} />
+                    <p>{search || activeTab !== "All" ? "No players found matching your criteria." : "No players have registered for your tournaments yet."}</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="op-playerInfo">
+                        <div className="op-avatar">
+                          {p.avatarUrl
+                            ? <img src={`http://localhost:5000${p.avatarUrl}`} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "999px" }} />
+                            : p.name.charAt(0).toUpperCase()
+                          }
+                        </div>
+                        <div>
+                          <div className="op-pName">{p.name}</div>
+                          <div className="op-pUsername">@{p.username}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="op-muted">{p.email}</td>
+                    <td className="op-muted">
+                      <span className="op-statBadge">{p.tournamentsPlayed} Events</span>
+                    </td>
+                    <td className="op-muted">{p.joinDate}</td>
+                    <td>
+                      <span className={`op__badge op__badge--${p.status.toLowerCase()}`}>
+                        <span className={`op-status-dot op-status-dot--${p.status.toLowerCase()}`}></span>
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
-        
+
         <div className="op-tableFooter">
           <div className="op-mutedSmall">
-            Showing {filtered.length} of {DUMMY_PLAYERS.length} players
+            Showing {filtered.length} of {players.length} players
           </div>
           <div className="op-pager">
             <button className="op-pagerBtn" disabled>Prev</button>

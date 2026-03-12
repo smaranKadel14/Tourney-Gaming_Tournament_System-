@@ -437,3 +437,76 @@ input:checked+.os-slider:before {
     font-weight: 600;
     color: var(--text-primary);
 }
+
+/* Alert messages */
+.os-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    border: 1px solid;
+}
+
+.os-alert--success {
+    border-color: var(--status-live-border);
+    background: var(--status-live-bg);
+    color: var(--status-live-text);
+}
+
+.os-alert--error {
+    border-color: var(--status-danger-text);
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--status-danger-text);
+}
+
+/* Loading skeleton */
+.os-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.os-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: os-spin 0.9s linear infinite;
+}
+
+@keyframes os-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.os-spin {
+    animation: os-spin 0.9s linear infinite;
+}
+
+/* Hint text inside label */
+.os-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+/* Disabled / read-only input */
+.os-input--disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Disabled button state */
+.os-save-btn:disabled,
+.os-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}

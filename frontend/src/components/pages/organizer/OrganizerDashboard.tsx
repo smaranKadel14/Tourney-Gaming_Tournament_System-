@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { clearAuthUser, getToken } from "../../../utils/auth";
 import CreateTournament from "./CreateTournament";
 import MyTournaments from "./MyTournaments";
+import type { TournamentRow } from "./MyTournaments";
+import TournamentManager from "./TournamentManager";
 import OrganizerPlayers from "./OrganizerPlayers";
 import OrganizerSettings from "./OrganizerSettings";
 import { 
@@ -21,24 +23,17 @@ import {
 
 type TournamentStatus = "Live" | "Registrations Open" | "Completed" | "Draft";
 
-type TournamentRow = {
-  id: string;
-  name: string;
-  game: string;
-  date: string;
-  status: TournamentStatus;
-  participants: string; // keep as string for now (dummy)
-};
-
 const OrganizerDashboard = () => {
   const [search, setSearch] = useState("");
-  const [activeView, setActiveView] = useState<"dashboard" | "create" | "my-tournaments" | "players" | "settings">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "create" | "my-tournaments" | "players" | "settings" | "manage-tournament">("dashboard");
+  const [managingTournament, setManagingTournament] = useState<TournamentRow | null>(null);
 
   const handleLogout = () => {
     clearAuthUser();
     window.location.href = '/login';
   };
 
+  const [profile, setProfile] = useState<{ fullName: string; email: string } | null>(null);
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +51,7 @@ const OrganizerDashboard = () => {
 
         if (res.ok) {
           const data = await res.json();
-          const formatted = data.map((t: any) => ({
+          const formatted: TournamentRow[] = data.map((t: any) => ({
             id: t._id,
             name: t.title,
             game: t.game?.title || "Unknown Game",
@@ -64,7 +59,16 @@ const OrganizerDashboard = () => {
             status: t.status === "completed" ? "Completed" 
                   : t.status === "ongoing" ? "Live"
                   : "Registrations Open",
-            participants: "—",
+            participants: t.participantCount ?? 0,
+            // extended fields for modal/manager
+            endDate: t.endDate,
+            location: t.location,
+            registrationDeadline: t.registrationDeadline,
+            prizePool: t.prizePool,
+            description: t.description,
+            maxParticipants: t.maxParticipants,
+            registrationFee: t.registrationFee,
+            imageUrl: t.imageUrl,
           }));
           setTournaments(formatted);
         }
@@ -75,6 +79,25 @@ const OrganizerDashboard = () => {
       }
     };
     fetchTournaments();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch("http://localhost:5000/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProfile({ fullName: data.fullName, email: data.email });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+    fetchProfile();
   }, []);
 
   const filtered = tournaments.filter((t) => {
@@ -154,10 +177,10 @@ const OrganizerDashboard = () => {
 
         <div className="od__sidebarFooter">
           <div className="od__profile">
-            <div className="od__avatar">A</div>
+            <div className="od__avatar">{profile?.fullName?.charAt(0).toUpperCase() ?? "?"}</div>
             <div>
-              <div className="od__name">Alex Morgan</div>
-              <div className="od__email">alex@gameframe.io</div>
+              <div className="od__name">{profile?.fullName ?? "..."}</div>
+              <div className="od__email">{profile?.email ?? "..."}</div>
             </div>
           </div>
 
@@ -169,34 +192,36 @@ const OrganizerDashboard = () => {
 
       {/* Main */}
       <main className="od__main">
-        {/* Topbar */}
-        <header className="od__topbar">
-          <div>
-            <h1 className="od__title">Organizer Dashboard</h1>
-            <p className="od__subtitle">Manage your events and track performance</p>
-          </div>
-
-          <div className="od__topActions">
-            <div className="od__searchWrap">
-              <Search className="od__searchIcon" size={18} />
-              <input
-                className="od__search"
-                placeholder="Search tournaments..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+        {/* Topbar — only shown on the main dashboard view */}
+        {activeView === "dashboard" && (
+          <header className="od__topbar">
+            <div>
+              <h1 className="od__title">Organizer Dashboard</h1>
+              <p className="od__subtitle">Manage your events and track performance</p>
             </div>
 
-            <button className="od__bell" title="Notifications">
-              <Bell size={20} />
-              <span className="od__dot" />
-            </button>
+            <div className="od__topActions">
+              <div className="od__searchWrap">
+                <Search className="od__searchIcon" size={18} />
+                <input
+                  className="od__search"
+                  placeholder="Search tournaments..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
 
-            <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
-              <Plus className="od__plus" size={18} /> Quick Create
-            </button>
-          </div>
-        </header>
+              <button className="od__bell" title="Notifications">
+                <Bell size={20} />
+                <span className="od__dot" />
+              </button>
+
+              <button className="od__primaryBtn" onClick={() => setActiveView("create")}>
+                <Plus className="od__plus" size={18} /> Quick Create
+              </button>
+            </div>
+          </header>
+        )}
 
         {activeView === "dashboard" ? (
           <>
@@ -231,7 +256,7 @@ const OrganizerDashboard = () => {
                   </div>
                   <div className="od__ghostIcon"><Users size={48} /></div>
                 </div>
-                <div className="od__statValue">0</div>
+                <div className="od__statValue">{tournaments.reduce((sum, t) => sum + t.participants, 0)}</div>
                 <div className="od__statChange od__statChange--up">↗ Dynamic</div>
               </div>
             </section>
@@ -310,7 +335,15 @@ const OrganizerDashboard = () => {
           <MyTournaments 
              tournaments={tournaments} 
              loading={loading} 
-             onCreateNew={() => setActiveView("create")} 
+             onCreateNew={() => setActiveView("create")}
+             onManage={(t) => { setManagingTournament(t); setActiveView("manage-tournament"); }}
+             onDeleteSuccess={(id) => setTournaments(prev => prev.filter(t => t.id !== id))}
+          />
+        ) : activeView === "manage-tournament" && managingTournament ? (
+          <TournamentManager
+            tournament={managingTournament}
+            onBack={() => setActiveView("my-tournaments")}
+            onDeleted={(id) => setTournaments(prev => prev.filter(t => t.id !== id))}
           />
         ) : activeView === "players" ? (
           <OrganizerPlayers />
