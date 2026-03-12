@@ -7,6 +7,7 @@ import gameRoutes from "./routes/game.routes";
 import tournamentRoutes from "./routes/tournament.routes";
 import newsRoutes from "./routes/news.routes";
 import userRoutes from "./routes/user.routes";
+import notificationRoutes from "./routes/notification.routes";
 import path from "path";
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use("/api/games", gameRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Serve static files from the uploads directory
 const __dirname_resolved = path.resolve();
