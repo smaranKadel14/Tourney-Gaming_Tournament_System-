@@ -3,6 +3,7 @@ import Registration from "../models/Registration";
 import { Request, Response } from "express";
 import { createNotification } from "./notification.controller";
 import { v4 as uuidv4 } from "uuid";
+import CryptoJS from "crypto-js";
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
