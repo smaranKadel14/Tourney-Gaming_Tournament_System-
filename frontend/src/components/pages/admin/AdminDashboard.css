@@ -211,6 +211,7 @@
   background: var(--accent-primary);
   color: #fff;
 }
+
 .admin-btn--primary:hover {
   background: var(--accent-primary-hover);
 }
@@ -220,6 +221,7 @@
   color: var(--text-primary);
   border: 1px solid var(--border-light);
 }
+
 .admin-btn--secondary:hover {
   background: var(--border-medium);
 }
@@ -229,10 +231,12 @@
   color: var(--text-primary);
   border: 1px dashed var(--border-light);
 }
+
 .admin-btn--outline:hover {
   border-color: var(--border-medium);
   background: var(--bg-hover);
 }
+
 .admin-btn--full {
   width: 100%;
   justify-content: center;
@@ -262,7 +266,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .admin-stat-top {
@@ -294,9 +298,17 @@
   font-size: 20px;
 }
 
-.admin-stat-icon--users { color: #60a5fa; }
-.admin-stat-icon--trophy { color: #c084fc; }
-.admin-stat-icon--game { color: #fb923c; }
+.admin-stat-icon--users {
+  color: #60a5fa;
+}
+
+.admin-stat-icon--trophy {
+  color: #c084fc;
+}
+
+.admin-stat-icon--game {
+  color: #fb923c;
+}
 
 .admin-stat-bottom {
   display: flex;
@@ -334,9 +346,10 @@
 /* Content Grid */
 .admin-content-grid {
   display: grid;
-  grid-template-columns: 2.5fr 1fr;
+  grid-template-columns: 2.5fr auto;
   gap: 24px;
   padding: 0 32px 32px;
+  align-items: start;
 }
 
 .admin-panel {
@@ -344,7 +357,7 @@
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .admin-panel-head {
@@ -368,7 +381,10 @@
   font-weight: 600;
   cursor: pointer;
 }
-.admin-link-btn:hover { color: var(--accent-primary-hover); }
+
+.admin-link-btn:hover {
+  color: var(--accent-primary-hover);
+}
 
 /* Table */
 .admin-table-wrap {
@@ -416,10 +432,25 @@
   font-size: 14px;
 }
 
-.admin-mini-ic--tournament { background: var(--accent-transparent); color: var(--accent-primary); }
-.admin-mini-ic--dispute { background: var(--status-danger-bg); color: var(--status-danger-text); }
-.admin-mini-ic--organizer { background: rgba(147, 51, 234, 0.15); color: #c084fc; }
-.admin-mini-ic--registration { background: var(--status-live-bg); color: var(--status-live-text); }
+.admin-mini-ic--tournament {
+  background: var(--accent-transparent);
+  color: var(--accent-primary);
+}
+
+.admin-mini-ic--dispute {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-text);
+}
+
+.admin-mini-ic--organizer {
+  background: rgba(147, 51, 234, 0.15);
+  color: #c084fc;
+}
+
+.admin-mini-ic--registration {
+  background: var(--status-live-bg);
+  color: var(--status-live-text);
+}
 
 .admin-activity-title {
   font-size: 14px;
@@ -443,13 +474,16 @@
 .admin-badge--completed {
   color: var(--status-live-text);
 }
+
 .admin-badge--pending-review {
   background: rgba(234, 88, 12, 0.15);
   color: #fb923c;
 }
+
 .admin-badge--processing {
   color: var(--accent-primary);
 }
+
 .admin-badge--error {
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
@@ -457,10 +491,20 @@
 
 
 /* Approvals Panel */
+.admin-approvals-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  height: auto;
+  width: 300px;
+}
+
 .admin-approvals-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+  min-height: 100px;
 }
 
 .admin-approval-item {
@@ -486,6 +530,7 @@
   font-size: 16px;
   flex-shrink: 0;
 }
+
 .admin-approval-item:nth-child(2) .admin-avatar {
   background: #fbcfe8;
   color: #831843;
@@ -536,6 +581,7 @@
   background: var(--status-live-bg);
   color: var(--status-live-text);
 }
+
 .admin-icon-btn--ok:hover {
   background: var(--status-live-border);
 }
@@ -544,6 +590,7 @@
   background: var(--status-danger-bg);
   color: var(--status-danger-text);
 }
+
 .admin-icon-btn--no:hover {
   background: var(--status-danger-border);
 }
@@ -565,14 +612,17 @@
   .admin-shell {
     grid-template-columns: 1fr;
   }
+
   .admin-sidebar {
     display: none;
   }
+
   .admin-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
+
   .admin-topbar-right .admin-search-wrap {
     display: none;
   }
