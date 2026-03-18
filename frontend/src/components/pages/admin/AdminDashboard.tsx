@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
-import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, UserPlus } from "lucide-react";
+import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, UserPlus, Loader2 } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -192,152 +192,131 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Stats Grid */}
-      <section className="admin-stats-grid">
-        {loading ? (
-          // Loading skeleton for stats
-          Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="admin-stat-card">
-              <div className="admin-stat-top">
-                <div className="admin-stat-info">
-                  <div className="admin-stat-label">Loading...</div>
-                  <div className="admin-stat-value">--</div>
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '50vh', gap: '16px' }}>
+          <Loader2 size={40} color="var(--accent-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+          <span style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500, letterSpacing: '0.5px' }}>Loading workspace...</span>
+        </div>
+      ) : (
+        <>
+          {/* Stats Grid */}
+          <section className="admin-stats-grid">
+            {stats.map((s) => (
+              <div key={s.label} className="admin-stat-card">
+                <div className="admin-stat-top">
+                  <div className="admin-stat-info">
+                    <div className="admin-stat-label">{s.label}</div>
+                    <div className="admin-stat-value">{s.value}</div>
+                  </div>
+                  <div className={`admin-stat-icon admin-stat-icon--${s.icon}`}>
+                    {s.icon === 'users' && <Users size={20} />}
+                    {s.icon === 'trophy' && <Trophy size={20} />}
+                    {s.icon === 'game' && <Gamepad2 size={20} />}
+                  </div>
                 </div>
-                <div className="admin-stat-icon">
-                  <div style={{ width: 20, height: 20, background: '#ccc', borderRadius: 4 }}></div>
-                </div>
-              </div>
-              <div className="admin-stat-bottom">
-                <div className="admin-stat-delta">--</div>
-                <span className="admin-stat-desc">Loading...</span>
-              </div>
-            </div>
-          ))
-        ) : (
-          stats.map((s) => (
-            <div key={s.label} className="admin-stat-card">
-              <div className="admin-stat-top">
-                <div className="admin-stat-info">
-                  <div className="admin-stat-label">{s.label}</div>
-                  <div className="admin-stat-value">{s.value}</div>
-                </div>
-                <div className={`admin-stat-icon admin-stat-icon--${s.icon}`}>
-                   {s.icon === 'users' && <Users size={20} />}
-                   {s.icon === 'trophy' && <Trophy size={20} />}
-                   {s.icon === 'game' && <Gamepad2 size={20} />}
+                <div className="admin-stat-bottom">
+                  <div className={`admin-stat-delta ${s.up ? 'admin-stat-delta--up' : 'admin-stat-delta--down'}`}>
+                    {s.up ? '↗' : '↘'} {s.delta}
+                  </div>
+                  <span className="admin-stat-desc">{s.desc}</span>
                 </div>
               </div>
-              <div className="admin-stat-bottom">
-                <div className={`admin-stat-delta ${s.up ? 'admin-stat-delta--up' : 'admin-stat-delta--down'}`}>
-                  {s.up ? '↗' : '↘'} {s.delta}
-                </div>
-                <span className="admin-stat-desc">{s.desc}</span>
-              </div>
-            </div>
-          ))
-        )}
-      </section>
+            ))}
+          </section>
 
-      {/* Content Grid */}
-      <section className="admin-content-grid">
-        {/* Recent Activity */}
-        <div className="admin-panel admin-activity-panel">
-          <div className="admin-panel-head">
-            <h2>Recent Activity</h2>
-            <button className="admin-link-btn">View All</button>
-          </div>
+          {/* Content Grid */}
+          <section className="admin-content-grid">
+            {/* Recent Activity */}
+            <div className="admin-panel admin-activity-panel">
+              <div className="admin-panel-head">
+                <h2>Recent Activity</h2>
+                <button className="admin-link-btn">View All</button>
+              </div>
 
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>ACTIVITY</th>
-                  <th>USER</th>
-                  <th>DATE</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '32px' }}>
-                      <span className="admin-td-muted">Loading activity...</span>
-                    </td>
-                  </tr>
-                ) : filteredActivity.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '32px' }}>
-                      <span className="admin-td-muted">No activity found.</span>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredActivity.map((a) => (
-                    <tr key={a.id}>
-                      <td>
-                        <div className="admin-activity-cell">
-                          <span className={`admin-mini-ic admin-mini-ic--${a.icon}`}>
-                             {a.icon === 'tournament' && <Plus size={16} />}
-                             {a.icon === 'dispute' && <Flag size={16} />}
-                             {a.icon === 'organizer' && <Briefcase size={16} />}
-                             {a.icon === 'registration' && <ArrowRight size={16} />}
-                          </span>
-                          <span className="admin-activity-title">{a.title}</span>
-                        </div>
-                      </td>
-                      <td className="admin-td-muted">{a.user}</td>
-                      <td className="admin-td-muted">{a.time}</td>
-                      <td>
-                        <span className={`admin-badge admin-badge--${a.status.replace(" ", "-").toLowerCase()}`}>
-                          {a.status}
-                        </span>
-                      </td>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ACTIVITY</th>
+                      <th>USER</th>
+                      <th>DATE</th>
+                      <th>STATUS</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    {filteredActivity.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center', padding: '32px' }}>
+                          <span className="admin-td-muted">No activity found.</span>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredActivity.map((a) => (
+                        <tr key={a.id}>
+                          <td>
+                            <div className="admin-activity-cell">
+                              <span className={`admin-mini-ic admin-mini-ic--${a.icon}`}>
+                                {a.icon === 'tournament' && <Plus size={16} />}
+                                {a.icon === 'dispute' && <Flag size={16} />}
+                                {a.icon === 'organizer' && <Briefcase size={16} />}
+                                {a.icon === 'registration' && <ArrowRight size={16} />}
+                              </span>
+                              <span className="admin-activity-title">{a.title}</span>
+                            </div>
+                          </td>
+                          <td className="admin-td-muted">{a.user}</td>
+                          <td className="admin-td-muted">{a.time}</td>
+                          <td>
+                            <span className={`admin-badge admin-badge--${a.status.replace(" ", "-").toLowerCase()}`}>
+                              {a.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pending Approvals */}
+            <div className="admin-panel admin-approvals-panel">
+              <div className="admin-panel-head">
+                <h2>Pending Approvals</h2>
+              </div>
+
+              <div className="admin-approvals-list">
+                {approvals.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '32px' }}>
+                    <span className="admin-td-muted">No pending approvals.</span>
+                  </div>
+                ) : (
+                  approvals.map((p) => (
+                    <div key={p.id} className="admin-approval-item">
+                      <div className="admin-avatar">{p.name.charAt(0)}</div>
+                      <div className="admin-approval-info">
+                        <div className="admin-approval-name">{p.name}</div>
+                        <div className="admin-approval-sub">{p.subtitle}</div>
+                      </div>
+                      <div className="admin-approval-actions">
+                        <button className="admin-icon-btn admin-icon-btn--ok" onClick={() => handleApprove(p.id, p.type)}>
+                          ✓
+                        </button>
+                        <button className="admin-icon-btn admin-icon-btn--no" onClick={() => handleReject(p.id, p.type)}>
+                          ✕
+                        </button>
+                      </div>
+                    </div>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pending Approvals */}
-        <div className="admin-panel admin-approvals-panel">
-          <div className="admin-panel-head">
-            <h2>Pending Approvals</h2>
-          </div>
-
-          <div className="admin-approvals-list">
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <span className="admin-td-muted">Loading approvals...</span>
               </div>
-            ) : approvals.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <span className="admin-td-muted">No pending approvals.</span>
-              </div>
-            ) : (
-              approvals.map((p) => (
-                <div key={p.id} className="admin-approval-item">
-                  <div className="admin-avatar">{p.name.charAt(0)}</div>
-                  <div className="admin-approval-info">
-                    <div className="admin-approval-name">{p.name}</div>
-                    <div className="admin-approval-sub">{p.subtitle}</div>
-                  </div>
-                  <div className="admin-approval-actions">
-                    <button className="admin-icon-btn admin-icon-btn--ok" onClick={() => handleApprove(p.id, p.type)}>
-                      ✓
-                    </button>
-                    <button className="admin-icon-btn admin-icon-btn--no" onClick={() => handleReject(p.id, p.type)}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
 
-          <button className="admin-btn admin-btn--outline admin-btn--full">View All Pending</button>
-        </div>
-      </section>
+              <button className="admin-btn admin-btn--outline admin-btn--full">View All Pending</button>
+            </div>
+          </section>
+        </>
+      )}
     </AdminLayout>
   );
 };

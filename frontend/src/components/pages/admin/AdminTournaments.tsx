@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import AdminLayout from "./AdminLayout";
-import { Download, Plus, Edit2, X, Gamepad2, Trophy } from "lucide-react";
+import { Download, Plus, Edit2, X, Gamepad2, Trophy, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./AdminDashboard.css"; // Reuse shared styling
 
-type TournamentStatus = "upcoming" | "ongoing" | "completed";
+type TournamentStatus = "pending" | "upcoming" | "ongoing" | "completed" | "rejected";
 
 type TournamentItem = {
   id: string;
@@ -14,12 +14,15 @@ type TournamentItem = {
   status: TournamentStatus;
   gameIcon: React.ReactNode;
   gameColor: string;
+  raw: any;
 };
 
 const AdminTournaments = () => {
   const [search, setSearch] = useState("");
   const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStatus, setEditStatus] = useState<TournamentStatus>("upcoming");
 
   // Fetch all tournaments on mount
   const fetchTournaments = async () => {
@@ -32,9 +35,10 @@ const AdminTournaments = () => {
           title: t.title,
           organizer: t.organizer?.name || "Unknown",
           startDate: new Date(t.startDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-          status: t.status === "completed" ? "completed" : t.status === "ongoing" ? "ongoing" : "upcoming",
-          gameIcon: t.game?.title.includes("Soccer") ? <Gamepad2 size={24} /> : <Trophy size={24} />,
-          gameColor: "#fb923c"
+          status: t.status as TournamentStatus,
+          gameIcon: t.game?.title?.includes("Soccer") ? <Gamepad2 size={24} /> : <Trophy size={24} />,
+          gameColor: "#fb923c",
+          raw: t
         }));
         setTournaments(formatted);
       }
@@ -65,12 +69,49 @@ const AdminTournaments = () => {
       case "completed": return "admin-badge--pending-review"; // grey/amber style
       case "ongoing": return "admin-badge--completed"; // green (live) style
       case "upcoming": return "admin-badge--processing"; // blue style
+      case "pending": return "admin-badge--pending-review"; // amber style
+      case "rejected": return "admin-badge--error"; // red style
       default: return "";
     }
   };
 
   const formatStatusText = (status: TournamentStatus) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  const handleStartEdit = (t: TournamentItem) => {
+    setEditingId(t.id);
+    setEditStatus(t.status);
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`http://localhost:5000/api/tournaments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: editStatus })
+      });
+
+      if (res.ok) {
+        setTournaments(prev => prev.map(t => {
+          if (t.id === id) {
+            return { ...t, status: editStatus };
+          }
+          return t;
+        }));
+        setEditingId(null);
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to update status: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating tournament status:", error);
+      alert("Server error. Could not update status.");
+    }
   };
 
   const handleDelete = async (id: string, title: string) => {
@@ -88,7 +129,6 @@ const AdminTournaments = () => {
       });
 
       if (res.ok) {
-        // Remove from state
         setTournaments(prev => prev.filter(t => t.id !== id));
       } else {
         const errorData = await res.json();
@@ -100,6 +140,40 @@ const AdminTournaments = () => {
     }
   };
 
+  const handleExportData = () => {
+    if (tournaments.length === 0) return;
+    
+    // Create CSV content
+    const headers = ["ID", "Title", "Organizer", "Start Date", "Status", "Max Participants"];
+    const csvRows = [headers.join(",")];
+    
+    tournaments.forEach(t => {
+      const values = [
+        t.id, 
+        `"${t.title.replace(/"/g, '""')}"`, 
+        `"${t.organizer.replace(/"/g, '""')}"`, 
+        `"${t.startDate}"`, 
+        t.status,
+        t.raw?.maxParticipants || 0
+      ];
+      csvRows.push(values.join(","));
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "tournaments_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCreateTournament = () => {
+    alert("Navigating to Tournament Creation Form...");
+    // Future integration: navigate("/organizer/tournaments/new")
+  };
+
   return (
     <AdminLayout breadcrumb="Tournaments" search={search} onSearch={setSearch}>
       <header className="admin-header">
@@ -108,10 +182,10 @@ const AdminTournaments = () => {
           <p>View, modify, and oversee all tournaments on the platform.</p>
         </div>
         <div className="admin-header-actions">
-          <button className="admin-btn admin-btn--secondary">
+          <button className="admin-btn admin-btn--secondary" onClick={handleExportData}>
             <Download className="admin-btn-ic" size={16} /> Export Data
           </button>
-          <button className="admin-btn admin-btn--primary">
+          <button className="admin-btn admin-btn--primary" onClick={handleCreateTournament}>
             <Plus className="admin-btn-ic" size={16} /> Create Tournament
           </button>
         </div>
@@ -169,18 +243,46 @@ const AdminTournaments = () => {
                     <td className="admin-td-muted">{t.organizer}</td>
                     <td className="admin-td-muted">{t.startDate}</td>
                     <td>
-                      <span className={`admin-badge ${getStatusBadgeClass(t.status)}`}>
-                        {formatStatusText(t.status)}
-                      </span>
+                      {editingId === t.id ? (
+                        <select 
+                          className="admin-search-input" 
+                          style={{ width: '110px', padding: '4px 8px' }}
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value as TournamentStatus)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="upcoming">Upcoming</option>
+                          <option value="ongoing">Ongoing</option>
+                          <option value="completed">Completed</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      ) : (
+                        <span className={`admin-badge ${getStatusBadgeClass(t.status)}`}>
+                          {formatStatusText(t.status)}
+                        </span>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="admin-approval-actions" style={{ justifyContent: 'flex-end' }}>
-                        <button className="admin-icon-btn admin-icon-btn--outline" style={{ background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }} title="Edit">
-                           <Edit2 size={14} />
-                        </button>
-                        <button className="admin-icon-btn admin-icon-btn--no" title="Delete" onClick={() => handleDelete(t.id, t.title)}>
-                          <X size={14} />
-                        </button>
+                        {editingId === t.id ? (
+                          <>
+                            <button className="admin-icon-btn admin-icon-btn--ok" title="Save Status" onClick={() => handleSaveEdit(t.id)}>
+                              <Check size={14} />
+                            </button>
+                            <button className="admin-icon-btn admin-icon-btn--no" title="Cancel Edit" onClick={() => setEditingId(null)}>
+                              <X size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="admin-icon-btn admin-icon-btn--outline" style={{ background: 'transparent', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }} title="Edit Status" onClick={() => handleStartEdit(t)}>
+                              <Edit2 size={14} />
+                            </button>
+                            <button className="admin-icon-btn admin-icon-btn--no" title="Delete" onClick={() => handleDelete(t.id, t.title)}>
+                              <X size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
