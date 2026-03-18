@@ -8,6 +8,8 @@ import tournamentRoutes from "./routes/tournament.routes";
 import newsRoutes from "./routes/news.routes";
 import userRoutes from "./routes/user.routes";
 import notificationRoutes from "./routes/notification.routes";
+import adminRoutes from "./routes/admin.routes";
+import Setting from "./models/Setting";
 import path from "path";
 
 dotenv.config();
@@ -30,10 +32,20 @@ app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Serve static files from the uploads directory
 const __dirname_resolved = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname_resolved, "uploads")));
+
+app.get("/api/system/status", async (req, res) => {
+  try {
+    const setting = await Setting.findOne();
+    res.json({ maintenanceMode: setting?.maintenanceMode || false });
+  } catch (err) {
+    res.json({ maintenanceMode: false });
+  }
+});
 
 app.get("/", (req, res) => res.send("API running..."));
 

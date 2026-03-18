@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import User from "../models/User";
+import Setting from "../models/Setting";
+import { logSystemEvent } from "../utils/logger";
 
 // Setup Nodemailer transporter (User should configure ENV variables later)
 const transporter = nodemailer.createTransport({
@@ -82,6 +84,8 @@ export const register = async (req: Request, res: Response) => {
       role: user.role,
     });
 
+    await logSystemEvent("User Registered", "USER", user.fullName, "info", `New user registered with email: ${user.email}`);
+
     return res.status(201).json({
       message: "Registered successfully",
       token,
@@ -129,6 +133,7 @@ export const login = async (req: Request, res: Response) => {
     const user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
+      await logSystemEvent("Failed Login", "AUTH", cleanEmail, "error", "Invalid login email provided");
       return res.status(401).json({
         message: "Invalid credentials",
       });
@@ -144,8 +149,18 @@ export const login = async (req: Request, res: Response) => {
     const ok = await bcrypt.compare(password, user.password);
 
     if (!ok) {
+      await logSystemEvent("Failed Login", "AUTH", cleanEmail, "error", "Invalid login credentials provided");
       return res.status(401).json({
         message: "Invalid credentials",
+      });
+    }
+
+    // Check Maintenance Mode
+    const setting = await Setting.findOne();
+    if (setting?.maintenanceMode && user.role !== "admin") {
+      await logSystemEvent("Blocked Login", "AUTH", cleanEmail, "warning", "User attempted to login during Maintenance Mode");
+      return res.status(403).json({
+        message: "The platform is currently offline for maintenance. Please check back later.",
       });
     }
 
@@ -154,6 +169,8 @@ export const login = async (req: Request, res: Response) => {
       id: user._id.toString(),
       role: user.role,
     });
+
+    await logSystemEvent("Successful Login", "AUTH", user.fullName, "success", `User logged in successfully`);
 
     return res.json({
       message: "Login successful",
@@ -226,6 +243,17 @@ export const oauthLogin = async (req: Request, res: Response) => {
       if (provider === "discord" && !user.discordId) user.discordId = providerId;
       await user.save();
     }
+
+    // Check Maintenance Mode
+    const setting = await Setting.findOne();
+    if (setting?.maintenanceMode && user.role !== "admin") {
+      await logSystemEvent("Blocked OAuth", "AUTH", cleanEmail, "warning", "User attempted OAuth login during Maintenance Mode");
+      return res.status(403).json({
+        message: "The platform is currently offline for maintenance. Please check back later.",
+      });
+    }
+
+    await logSystemEvent("OAuth Login", "AUTH", user.fullName, "success", `User logged in via ${provider.toUpperCase()}`);
 
     const token = signToken({ id: user._id.toString(), role: user.role });
 
