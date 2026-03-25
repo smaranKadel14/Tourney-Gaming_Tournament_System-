@@ -3,9 +3,21 @@ import { api } from "../../../lib/api";
 import "./PlayerHome.css";
 import bg from "../../../assets/home/background.png";
 import gamerImg from "../../../assets/home/gamer.png";
-import placeholderImg from "../../../assets/home/COD.png";
+import valImg from "../../../assets/Tournaments/VAL.png";
+import codImg from "../../../assets/Tournaments/COD.png";
+import csImg from "../../../assets/Tournaments/CS.png";
+import lolImg from "../../../assets/Tournaments/LOL.png";
 import { Trophy, Zap, Facebook, Twitter, Linkedin } from "lucide-react";
 import PlayerNavbar from "./PlayerNavbar";
+
+const getGameImage = (gameTitle?: string) => {
+  if (!gameTitle) return valImg;
+  const title = gameTitle.toLowerCase();
+  if (title.includes("call of duty") || title.includes("cod") || title.includes("warzone")) return codImg;
+  if (title.includes("counter-strike") || title.includes("cs")) return csImg;
+  if (title.includes("league of legends") || title.includes("lol")) return lolImg;
+  return valImg;
+};
 
 type GameInfo = {
   _id: string;
@@ -98,8 +110,7 @@ export default function PlayerHome() {
             ) : featuredGame ? (
               <>
                 <div className="ph__featured-left">
-                  {/* Using local asset as fallback if the URL is broken */}
-                  <img src={placeholderImg} alt={featuredGame.title} style={{ borderRadius: "10px" }} />
+                  <img src={getGameImage(featuredGame.title)} alt={featuredGame.title} style={{ borderRadius: "10px", width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
                 
                 <div className="ph__featured-right">

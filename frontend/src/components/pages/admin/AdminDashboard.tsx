@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
-import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, UserPlus, Loader2 } from "lucide-react";
+import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, Loader2, Megaphone } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -29,6 +29,31 @@ const AdminDashboard = () => {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Notice Broadcaster State
+  const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeContent, setNoticeContent] = useState("");
+
+  const handlePostNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noticeTitle.trim() || !noticeContent.trim()) return;
+
+    try {
+      const token = getToken();
+      await fetch("http://localhost:5000/api/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: noticeTitle, content: noticeContent })
+      });
+      setIsNoticeModalOpen(false);
+      setNoticeTitle("");
+      setNoticeContent("");
+      alert("Notice broadcasted to all players!");
+    } catch (err) {
+      console.error("Failed to post notice", err);
+    }
+  };
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -183,8 +208,8 @@ const AdminDashboard = () => {
           <p>Welcome back, Admin. Here is what's happening today.</p>
         </div>
         <div className="admin-header-actions">
-          <button className="admin-btn admin-btn--secondary">
-            <UserPlus className="admin-btn-ic" size={16} /> Invite User
+          <button className="admin-btn admin-btn--secondary" onClick={() => setIsNoticeModalOpen(true)}>
+            <Megaphone className="admin-btn-ic" size={16} /> Broadcast Notice
           </button>
           <button className="admin-btn admin-btn--primary">
             <Plus className="admin-btn-ic" size={16} /> Create Tournament
@@ -316,6 +341,36 @@ const AdminDashboard = () => {
             </div>
           </section>
         </>
+      )}
+
+      {/* Notice Broadcast Modal */}
+      {isNoticeModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000}}>
+          <div style={{ background: '#0f172a', border: '1px solid rgba(162,0,255,0.3)', width: '500px', borderRadius: '16px', padding: '32px' }}>
+            <h2 style={{ marginTop: 0, color: '#fff', marginBottom: '24px' }}>Broadcast Official Notice</h2>
+            <form onSubmit={handlePostNotice}>
+              <input 
+                type="text" 
+                placeholder="Announcement Title" 
+                value={noticeTitle}
+                onChange={(e) => setNoticeTitle(e.target.value)}
+                required
+                style={{ width: '100%', background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '12px', borderRadius: '8px', marginBottom: '16px', boxSizing: 'border-box' }}
+              />
+              <textarea 
+                placeholder="Write your important announcement here... It will automatically be sent as a Notification to all players." 
+                value={noticeContent}
+                onChange={(e) => setNoticeContent(e.target.value)}
+                required
+                style={{ width: '100%', background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '12px', borderRadius: '8px', marginBottom: '16px', boxSizing: 'border-box', resize: 'vertical', minHeight: '120px' }}
+              ></textarea>
+              <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setIsNoticeModalOpen(false)} style={{ background: 'transparent', border: '1px solid #64748b', color: '#fff', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ background: 'linear-gradient(90deg, #a200ff, #ff007f)', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Publish Notice</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </AdminLayout>
   );

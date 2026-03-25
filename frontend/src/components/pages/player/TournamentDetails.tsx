@@ -4,6 +4,19 @@ import { api } from "../../../lib/api";
 import "./TournamentDetails.css";
 import { getToken, getAuthUser } from "../../../utils/auth";
 import bg from "../../../assets/bg.png";
+import valImg from "../../../assets/Tournaments/VAL.png";
+import codImg from "../../../assets/Tournaments/COD.png";
+import csImg from "../../../assets/Tournaments/CS.png";
+import lolImg from "../../../assets/Tournaments/LOL.png";
+
+const getGameImage = (gameTitle?: string) => {
+  if (!gameTitle) return valImg;
+  const title = gameTitle.toLowerCase();
+  if (title.includes("call of duty") || title.includes("cod") || title.includes("warzone")) return codImg;
+  if (title.includes("counter-strike") || title.includes("cs")) return csImg;
+  if (title.includes("league of legends") || title.includes("lol")) return lolImg;
+  return valImg;
+};
 
 type Tournament = {
   _id: string;
@@ -160,7 +173,7 @@ export default function TournamentDetails() {
 
         <div className="td-content">
           <main className="td-main">
-            <header className="td-banner" style={{ backgroundImage: `url(${tournament.imageUrl})` }}>
+            <header className="td-banner" style={{ backgroundImage: `url(${getGameImage(tournament.game?.title)})` }}>
               <div className="td-banner-overlay">
                 <span className={`td-status ${tournament.status}`}>{tournament.status}</span>
                 <h1 className="td-title">{tournament.title}</h1>

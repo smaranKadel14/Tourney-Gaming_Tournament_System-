@@ -10,6 +10,8 @@ import Tournaments from "../pages/player/Tournaments";
 import News from "../pages/player/News";
 import Contact from "../pages/player/Contact";
 import PlayerProfile from "../pages/player/PlayerProfile";
+import PublicProfile from "../pages/player/PublicProfile";
+import Community from "../pages/player/Community";
 import TournamentDetails from "../pages/player/TournamentDetails";
 import PaymentFailure from "../pages/player/PaymentFailure";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
@@ -94,6 +96,25 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/player/profile/:id"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <PublicProfile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/player/community"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <Community />
+          </ProtectedRoute>
+        }
+      />
+      
       
       <Route
         path="/organizer"

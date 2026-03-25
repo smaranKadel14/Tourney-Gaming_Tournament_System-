@@ -18,6 +18,7 @@ export default function PlayerNavbar() {
         <Link to="/player" className={location.pathname === "/player" ? "active" : ""}>Home</Link>
         <Link to="/player/tournaments" className={location.pathname === "/player/tournaments" ? "active" : ""}>Tournaments</Link>
         <Link to="/player/news" className={location.pathname === "/player/news" ? "active" : ""}>News</Link>
+        <Link to="/player/community" className={location.pathname.startsWith("/player/community") ? "active" : ""}>Community</Link>
         <Link to="/player/contact" className={location.pathname === "/player/contact" ? "active" : ""}>Contact</Link>
       </nav>
 
