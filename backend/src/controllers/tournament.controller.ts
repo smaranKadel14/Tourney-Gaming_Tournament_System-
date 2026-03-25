@@ -18,7 +18,7 @@ export const getTournaments = async (req: Request, res: Response) => {
         }
 
         const tournaments = await Tournament.find(query)
-            .populate("game", "title imageUrl")
+            .populate("game", "title imageUrl genre")
             .sort({ startDate: 1 });
 
         res.json(tournaments);

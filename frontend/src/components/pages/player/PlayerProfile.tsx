@@ -3,11 +3,12 @@ import axios from "axios";
 import PlayerNavbar from "./PlayerNavbar";
 import { getToken } from "../../../utils/auth";
 import ImageCropper from "../../common/ImageCropper";
-import "./PlayerProfile.css";
+import { User as UserIcon, Calendar, MapPin, Share2, Trophy, Target, Activity, Shield, Camera, Trash2, Edit2, Save, X } from "lucide-react";
+import bg from "../../../assets/home/background.png";
+import valImg from "../../../assets/Tournaments/VAL.png";
+import codImg from "../../../assets/Tournaments/COD.png";
 
-// Assets
-import bg from "../../../assets/bg.png";
-import defAvatar from "../../../assets/home/gamer.png";
+import "./PublicProfile.css"; // Reuse the stunning unified CSS
 
 interface UserProfile {
   _id: string;
@@ -15,7 +16,22 @@ interface UserProfile {
   email: string;
   bio: string;
   avatarUrl: string;
+  role: string;
+  history?: TournamentHistory[];
+  stats?: {
+    totalTournaments: number;
+    memberSince: string;
+  };
 }
+
+type TournamentHistory = {
+  _id: string;
+  title: string;
+  game?: { title: string; imageUrl?: string };
+  status: string;
+  startDate: string;
+  imageUrl?: string;
+};
 
 export default function PlayerProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -67,7 +83,7 @@ export default function PlayerProfile() {
         setImageToCrop(reader.result as string);
       };
       reader.readAsDataURL(file);
-      e.target.value = ""; // Reset file input
+      e.target.value = "";
     }
   };
 
@@ -107,14 +123,78 @@ export default function PlayerProfile() {
     }
   };
 
-  // Resolve avatar URL formatting 
-  const displayAvatar = profile?.avatarUrl 
-    ? `http://localhost:5000${profile.avatarUrl}` 
-    : defAvatar;
+  if (!profile) return (
+    <div className="pt-page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <h2 style={{ color: '#fff' }}>Loading Profile...</h2>
+    </div>
+  );
 
   return (
-    <div className="pp-page">
-      {/* Hidden File Input */}
+    <div className="pt-page">
+      <style>{`
+        .avatar-edit-overlay {
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+          background: rgba(0,0,0,0.6);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s;
+          gap: 12px;
+        }
+        .pubprof-avatar-wrap:hover .avatar-edit-overlay {
+          opacity: 1;
+        }
+        .avatar-action-btn {
+          background: rgba(255,255,255,0.2);
+          border: none;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .avatar-action-btn:hover {
+          background: #a200ff;
+        }
+        .avatar-action-btn.danger:hover {
+          background: #ff4444;
+        }
+        .edit-input {
+          background: rgba(0,0,0,0.5);
+          border: 1px solid rgba(162, 0, 255, 0.4);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 2rem;
+          font-weight: 900;
+          width: 100%;
+          font-family: inherit;
+          max-width: 300px;
+        }
+        .edit-textarea {
+          background: rgba(0,0,0,0.5);
+          border: 1px solid rgba(162, 0, 255, 0.4);
+          color: white;
+          padding: 12px;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          width: 100%;
+          max-width: 400px;
+          height: 80px;
+          font-family: inherit;
+          resize: none;
+          margin-top: 8px;
+        }
+      `}</style>
+      
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -122,183 +202,173 @@ export default function PlayerProfile() {
         accept="image/jpeg, image/png, image/jpg, image/webp" 
         onChange={handleFileChange} 
       />
-      {/* Background with Purple Glow */}
-      <div className="pp-bg" style={{ backgroundImage: `url(${bg})` }} />
-      <div className="pp-overlay" />
 
-      <div className="pp-wrap">
+      <div className="pt-bg" style={{ backgroundImage: `url(${bg})` }} />
+      <div className="pt-overlay" />
+
+      <div className="pt-wrap">
         <PlayerNavbar />
 
-        <div className="pp-content">
-          {/* 1. Profile Identity Header */}
-          <section className="pp-header">
-            <div className="pp-avatar-wrapper">
-                <div 
-                className="pp-avatar" 
-                style={{ backgroundImage: `url(${displayAvatar})` }}
-              >
-                
-                <div className="pp-avatar-overlay">
-                  <button className="pp-btn-icon" onClick={handleUploadAvatar} title="Upload New">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                    </svg>
+        <div className="pubprof-container">
+          
+          {/* Profile Banner */}
+          <div className="pubprof-header">
+            <div className="pubprof-avatar-wrap">
+              {profile.avatarUrl ? (
+                <img src={`http://localhost:5000${profile.avatarUrl}`} alt={profile.fullName} className="pubprof-avatar" />
+              ) : (
+                <div className="pubprof-avatar-fallback">
+                  <UserIcon size={64} />
+                </div>
+              )}
+              <div className="pubprof-avatar-badge">
+                <Shield size={16} color="white" fill="white" />
+              </div>
+
+              {/* Edit Avatar Overlay */}
+              <div className="avatar-edit-overlay">
+                <button className="avatar-action-btn" onClick={handleUploadAvatar} title="Change Avatar">
+                  <Camera size={18} />
+                </button>
+                {profile.avatarUrl && (
+                  <button className="avatar-action-btn danger" onClick={handleRemoveAvatar} title="Remove Avatar">
+                    <Trash2 size={18} />
                   </button>
-                  {profile?.avatarUrl && (
-                    <button className="pp-btn-icon pp-btn-danger" onClick={handleRemoveAvatar} title="Remove">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                      </svg>
-                    </button>
+                )}
+              </div>
+            </div>
+
+            <div className="pubprof-info">
+              {isEditing ? (
+                <div style={{ marginBottom: 12 }}>
+                  <input 
+                    type="text" 
+                    className="edit-input" 
+                    value={editForm.fullName} 
+                    onChange={e => setEditForm(prev => ({...prev, fullName: e.target.value}))}
+                  />
+                  <textarea 
+                    className="edit-textarea" 
+                    value={editForm.bio} 
+                    placeholder="Write your bio..."
+                    onChange={e => setEditForm(prev => ({...prev, bio: e.target.value}))}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="pubprof-name-row">
+                    <h1 className="pubprof-name">{profile.fullName}</h1>
+                  </div>
+                  <div className="pubprof-meta" style={{ marginBottom: 8 }}>
+                    <div className="pubprof-meta-item">
+                      <MapPin size={14} /> {profile.email}
+                    </div>
+                    <div className="pubprof-meta-item">
+                      <Calendar size={14} /> Platform Member
+                    </div>
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: 14 }}>
+                    {profile.bio || "Click 'Edit Profile' to add a custom biography."}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="pubprof-actions">
+              {isEditing ? (
+                <>
+                  <button className="pubprof-btn pubprof-btn-secondary" onClick={() => setIsEditing(false)}>
+                    <X size={16} /> Cancel
+                  </button>
+                  <button className="pubprof-btn pubprof-btn-primary" onClick={handleSaveProfile}>
+                    <Save size={16} /> Save Changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="pubprof-btn pubprof-btn-secondary">
+                    <Share2 size={16} /> Share
+                  </button>
+                  <button className="pubprof-btn pubprof-btn-primary" onClick={() => setIsEditing(true)}>
+                    <Edit2 size={16} /> Edit Profile
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="pubprof-body">
+            {/* Left Column (Full Width Now) */}
+            <div className="pubprof-left" style={{ gridColumn: '1 / -1' }}>
+              
+              {/* Real Stats Row */}
+              <div className="pubprof-stats-row">
+                <div className="pubprof-stat-card">
+                  <Target size={60} color="#a200ff" />
+                  <div className="pubprof-stat-label">Tournaments Played</div>
+                  <div className="pubprof-stat-value">{profile.stats?.totalTournaments || 0}</div>
+                  <div className="pubprof-stat-sub" style={{ color: '#ffaa44' }}>Total Appearances</div>
+                </div>
+                
+                <div className="pubprof-stat-card">
+                  <Activity size={60} color="#a200ff" />
+                  <div className="pubprof-stat-label">Platform Role</div>
+                  <div className="pubprof-stat-value" style={{ fontSize: '24px', textTransform: 'capitalize' }}>{profile.role || 'Player'}</div>
+                  <div className="pubprof-stat-sub" style={{ color: '#a200ff' }}>Account Type</div>
+                </div>
+
+                <div className="pubprof-stat-card">
+                  <Calendar size={60} color="#a200ff" />
+                  <div className="pubprof-stat-label">Member Since</div>
+                  <div className="pubprof-stat-value" style={{ fontSize: '24px' }}>
+                    {profile.stats?.memberSince ? new Date(profile.stats.memberSince).getFullYear() : new Date().getFullYear()}
+                  </div>
+                  <div className="pubprof-stat-sub" style={{ color: '#94a3b8' }}>Join Date</div>
+                </div>
+
+                <div className="pubprof-stat-card">
+                  <Trophy size={60} color="#a200ff" />
+                  <div className="pubprof-stat-label">Trophies</div>
+                  <div className="pubprof-stat-value">0</div>
+                  <div className="pubprof-stat-sub" style={{ color: '#94a3b8' }}>Coming Soon</div>
+                </div>
+              </div>
+
+              {/* Tournament History */}
+              <div className="pubprof-panel">
+                <div className="pubprof-panel-header">
+                  <h2 className="pubprof-panel-title">Tournament History</h2>
+                </div>
+
+                <div className="pubprof-tourney-list">
+                  {!profile.history || profile.history.length === 0 ? (
+                    <div style={{ color: '#64748b' }}>You haven't participated in any completed tournaments yet.</div>
+                  ) : (
+                    profile.history.map(tourney => (
+                      <div className="pubprof-tourney-item" key={tourney._id}>
+                        <img src={tourney.game?.title?.toLowerCase().includes('valorant') ? valImg : codImg} alt={tourney.game?.title || "Game"} className="pubprof-tourney-icon" />
+                        <div className="pubprof-tourney-info">
+                          <h4 className="pubprof-tourney-name">{tourney.title}</h4>
+                          <div className="pubprof-tourney-meta">{tourney.game?.title || "Unknown Game"}</div>
+                        </div>
+                        <div className="pubprof-tourney-result">
+                          <div className="pubprof-placement pubprof-place-other">
+                            <Trophy size={10} /> PARTICIPATED
+                          </div>
+                          <span className="pubprof-tourney-time">{new Date(tourney.startDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="pp-identity">
-              {isEditing ? (
-                 <div className="pp-edit-form">
-                   <input 
-                     type="text" 
-                     className="pp-edit-input" 
-                     value={editForm.fullName} 
-                     onChange={e => setEditForm(prev => ({...prev, fullName: e.target.value}))}
-                     placeholder="Display Name"
-                   />
-                   <span className="pp-email">{profile?.email || "loading..."}</span>
-                   <textarea 
-                     className="pp-edit-textarea" 
-                     value={editForm.bio} 
-                     onChange={e => setEditForm(prev => ({...prev, bio: e.target.value}))}
-                     placeholder="Write a bio about yourself..."
-                   />
-                   <div className="pp-edit-actions">
-                     <button className="pp-btn-save" onClick={handleSaveProfile}>Save Changes</button>
-                     <button className="pp-btn-cancel" onClick={() => setIsEditing(false)}>Cancel</button>
-                   </div>
-                 </div>
-              ) : (
-                 <>
-                  <h1 className="pp-username">{profile?.fullName || "Loading..."}</h1>
-                  <span className="pp-email">{profile?.email || "loading..."}</span>
-                  <p className="pp-bio">
-                    {profile?.bio || "No bio added yet. Click 'Edit Profile' to write something about yourself!"}
-                  </p>
-                  <button className="pp-btn-edit" onClick={() => setIsEditing(true)}>Edit Profile</button>
-                 </>
-              )}
-            </div>
-          </section>
 
-          {/* 2. Quick Statistics */}
-          <section className="pp-stats">
-            <div className="pp-stat-card">
-              <div className="pp-stat-value">14</div>
-              <div className="pp-stat-label">Tournaments Played</div>
-            </div>
-            <div className="pp-stat-card">
-              <div className="pp-stat-value">65%</div>
-              <div className="pp-stat-label">Overall Win Rate</div>
-            </div>
-            <div className="pp-stat-card">
-              <div className="pp-stat-value" style={{ fontSize: "28px" }}>Valorant</div>
-              <div className="pp-stat-label">Favorite Game</div>
-            </div>
-          </section>
-
-          <div className="pp-grid">
-            {/* 3. Tournament History */}
-            <section className="pp-history">
-              <h2 className="pp-section-title">Tournament History</h2>
-              <div className="pp-table-container">
-                <table className="pp-table">
-                  <thead>
-                    <tr>
-                      <th>Tournament Name</th>
-                      <th>Game</th>
-                      <th>Date</th>
-                      <th>Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Winter Cash Cup</td>
-                      <td>Valorant</td>
-                      <td>Dec 15, 2025</td>
-                      <td><span className="pp-badge pp-badge-win">1st Place</span></td>
-                    </tr>
-                    <tr>
-                      <td>Global Royale Open</td>
-                      <td>Call of Duty: Warzone</td>
-                      <td>Oct 02, 2025</td>
-                      <td><span className="pp-badge pp-badge-loss">Eliminated (Round 2)</span></td>
-                    </tr>
-                    <tr>
-                      <td>Weekly Clash</td>
-                      <td>League of Legends</td>
-                      <td>Sep 19, 2025</td>
-                      <td><span className="pp-badge pp-badge-win">Semi-Finalist</span></td>
-                    </tr>
-                    <tr>
-                      <td>CS:GO Local Qualifiers</td>
-                      <td>CS:GO</td>
-                      <td>Aug 11, 2025</td>
-                      <td><span className="pp-badge pp-badge-loss">Eliminated (Groups)</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* 4. Achievements Showcase */}
-            <section className="pp-achievements">
-              <h2 className="pp-section-title">Achievements</h2>
-              <div className="pp-achievements-grid">
-                
-                <div className="pp-achievement-card">
-                  <div className="pp-achievement-icon" style={{ background: "linear-gradient(135deg, #FFD700, #FDB931)" }}>
-                    🏆
-                  </div>
-                  <span className="pp-achievement-label">Champion</span>
-                </div>
-
-                <div className="pp-achievement-card">
-                  <div className="pp-achievement-icon" style={{ background: "linear-gradient(135deg, #a200ff, #ff007f)" }}>
-                    🚀
-                  </div>
-                  <span className="pp-achievement-label">Beta Tester</span>
-                </div>
-
-                <div className="pp-achievement-card">
-                  <div className="pp-achievement-icon" style={{ background: "linear-gradient(135deg, #ff4e50, #f9d423)" }}>
-                    🔥
-                  </div>
-                  <span className="pp-achievement-label">First Blood</span>
-                </div>
-
-                <div className="pp-achievement-card">
-                  <div className="pp-achievement-icon" style={{ background: "linear-gradient(135deg, #00c6ff, #0072ff)" }}>
-                    ❄️
-                  </div>
-                  <span className="pp-achievement-label">Ice Cold</span>
-                </div>
-
-              </div>
-            </section>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="pp-footer">
-          <p className="pp-copyright">
-            © 2026 NK GROUP INC. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
-            <br />LOGOS ARE REGISTERED TRADEMARKS. AND RELATED LOGOS ARE REGISTERED TRADEMARKS OR TRADEMARKS OF ID SOFTWARE LLC IN
-            <br />THE U.S. AND/OR OTHER COUNTRIES. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
-          </p>
-        </footer>
       </div>
 
-      {/* Image Cropper Modal */}
       {imageToCrop && (
         <ImageCropper 
           imageSrc={imageToCrop} 
