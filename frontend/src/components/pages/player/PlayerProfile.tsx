@@ -124,12 +124,6 @@ export default function PlayerProfile() {
     }
   };
 
-  if (!profile) return (
-    <div className="pt-page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <h2 style={{ color: '#fff' }}>Loading Profile...</h2>
-    </div>
-  );
-
   return (
     <div className="pt-page">
       <input 
@@ -146,7 +140,15 @@ export default function PlayerProfile() {
       <div className="pt-wrap">
         <PlayerNavbar />
 
-        <div className="pubprof-container">
+        {!profile ? (
+          <div className="pubprof-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div className="loading-spinner-wrap">
+              <div className="loading-spinner"></div>
+              <h2 style={{ color: '#fff', marginTop: '1.5rem', opacity: 0.8, fontSize: '1.5rem', fontWeight: '600' }}>Loading Profile...</h2>
+            </div>
+          </div>
+        ) : (
+          <div className="pubprof-container">
           
           {/* Profile Banner */}
           <div className="pubprof-header">
@@ -310,6 +312,7 @@ export default function PlayerProfile() {
 
           </div>
         </div>
+      )}
       </div>
 
       {imageToCrop && (

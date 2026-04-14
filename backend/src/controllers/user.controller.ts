@@ -6,12 +6,17 @@ import Team from "../models/Team";
 export const getProfile = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id || (req as any).user._id;
-        const user = await User.findById(userId).select("-password");
+        
+        // Parallelize initial queries
+        const [user, userTeams] = await Promise.all([
+            User.findById(userId).select("-password"),
+            Team.find({ members: userId })
+        ]);
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const userTeams = await Team.find({ members: userId });
         const teamIds = userTeams.map(t => t._id);
 
         const registrations = await Registration.find({ 
@@ -26,10 +31,14 @@ export const getProfile = async (req: Request, res: Response) => {
         }).populate('team', 'name logoUrl')
         .sort({ createdAt: -1 });
 
-        const history = registrations.map(r => ({
-            ...(r.tournament as any).toObject(),
-            registeredAs: r.team ? (r.team as any).name : "Solo"
-        })).filter(h => h._id);
+        // Safely map history, checking if tournament exists
+        const history = registrations.map(r => {
+            if (!r.tournament) return null;
+            return {
+                ...(r.tournament as any).toObject(),
+                registeredAs: r.team ? (r.team as any).name : "Solo"
+            };
+        }).filter(Boolean);
 
         res.json({
             ...user.toObject(),
@@ -41,6 +50,7 @@ export const getProfile = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
+        console.error("Get Profile Error:", error);
         res.status(500).json({ message: "Server Error", error });
     }
 };

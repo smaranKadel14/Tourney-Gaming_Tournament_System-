@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch } from "lucide-react";
+import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./TournamentManager.css";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
@@ -59,7 +59,15 @@ const CustomSeed = ({ seed, roundIndex, seedIndex, bracketData, onUpdate }: any)
 
   const handleDragStart = (e: React.DragEvent, teamIndex: 0 | 1) => {
     if (roundIndex !== 0) return;
-    e.dataTransfer.setData("text/plain", JSON.stringify({ seedIndex, teamIndex }));
+    const team = seed.teams[teamIndex];
+    if (!team || team.name === "TBD" || team.name === "BYE") return;
+
+    e.dataTransfer.setData("application/json", JSON.stringify({ 
+      type: "bracket",
+      seedIndex, 
+      teamIndex,
+      team
+    }));
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -73,23 +81,42 @@ const CustomSeed = ({ seed, roundIndex, seedIndex, bracketData, onUpdate }: any)
     if (roundIndex !== 0) return;
     e.preventDefault();
     try {
-      const dataStr = e.dataTransfer.getData("text/plain");
+      const dataStr = e.dataTransfer.getData("application/json");
       if (!dataStr) return;
       const draggedData = JSON.parse(dataStr);
-      const sourceSeedIndex = draggedData.seedIndex;
-      const sourceTeamIndex = draggedData.teamIndex;
 
-      if (sourceSeedIndex === seedIndex && sourceTeamIndex === targetTeamIndex) return;
+      if (draggedData.type === "bracket") {
+        const sourceSeedIndex = draggedData.seedIndex;
+        const sourceTeamIndex = draggedData.teamIndex;
 
-      const newData = JSON.parse(JSON.stringify(bracketData));
-      
-      const sourceTeam = newData[0].seeds[sourceSeedIndex].teams[sourceTeamIndex];
-      const targetTeam = newData[0].seeds[seedIndex].teams[targetTeamIndex];
+        if (sourceSeedIndex === seedIndex && sourceTeamIndex === targetTeamIndex) return;
 
-      newData[0].seeds[sourceSeedIndex].teams[sourceTeamIndex] = targetTeam;
-      newData[0].seeds[seedIndex].teams[targetTeamIndex] = sourceTeam;
+        const newData = JSON.parse(JSON.stringify(bracketData));
+        
+        const sourceTeam = newData[0].seeds[sourceSeedIndex].teams[sourceTeamIndex];
+        const targetTeam = newData[0].seeds[seedIndex].teams[targetTeamIndex];
 
-      onUpdate(newData);
+        newData[0].seeds[sourceSeedIndex].teams[sourceTeamIndex] = targetTeam;
+        newData[0].seeds[seedIndex].teams[targetTeamIndex] = sourceTeam;
+
+        onUpdate(newData);
+      } else if (draggedData.type === "list") {
+        const team = draggedData.team;
+        const newData = JSON.parse(JSON.stringify(bracketData));
+        
+        // If there's already a team here, swap them? 
+        // Or just place and remove from list. 
+        // The TournamentManager will handle the list update via onUpdate.
+        
+        const existingTeam = newData[0].seeds[seedIndex].teams[targetTeamIndex];
+        newData[0].seeds[seedIndex].teams[targetTeamIndex] = {
+           ...team,
+           score: "",
+           status: null
+        };
+
+        onUpdate(newData, existingTeam?.name !== "TBD" ? existingTeam : null, team);
+      }
     } catch (err) {
       console.error("Drop error", err);
     }
@@ -208,6 +235,7 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
   const [bracketData, setBracketData] = useState<any[] | null>(tournament.bracketData || null);
   const [generatingBracket, setGeneratingBracket] = useState(false);
   const [bracketError, setBracketError] = useState("");
+  const [unassignedTeams, setUnassignedTeams] = useState<any[]>([]);
 
   // --- Details tab state ---
   const [form, setForm] = useState({
@@ -236,10 +264,47 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
   const token = getToken();
 
   useEffect(() => {
-    if (activeTab === "participants") {
+    if (activeTab === "participants" || activeTab === "bracket") {
       fetchRegistrations();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "bracket" && registrations.length > 0) {
+      if (bracketData && bracketData.length > 0) {
+        // Find teams that are NOT in the bracket yet
+        const assignedNames = new Set<string>();
+        bracketData.forEach(round => {
+          round.seeds.forEach((seed: any) => {
+            seed.teams.forEach((t: any) => {
+              if (t && t.name && t.name !== "TBD" && t.name !== "BYE") {
+                assignedNames.add(t.name);
+              }
+            });
+          });
+        });
+
+        const unassigned = registrations
+          .filter(r => r.status === "confirmed")
+          .map(r => ({
+            id: r.team?._id || r.user?._id,
+            name: r.team?.name || r.user?.fullName
+          }))
+          .filter(t => !assignedNames.has(t.name));
+        
+        setUnassignedTeams(unassigned);
+      } else {
+        // If no bracket, all confirmed participants are unassigned
+        const unassigned = registrations
+          .filter(r => r.status === "confirmed")
+          .map(r => ({
+            id: r.team?._id || r.user?._id,
+            name: r.team?.name || r.user?.fullName
+          }));
+        setUnassignedTeams(unassigned);
+      }
+    }
+  }, [activeTab, registrations, bracketData]);
 
   const fetchRegistrations = async () => {
     setLoadingRegs(true);
@@ -276,7 +341,56 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
     }
   };
 
-  const handleUpdateBracket = async (newBracketData: any[]) => {
+  const handleInitializeManualBracket = () => {
+    const confirmedCount = registrations.filter(r => r.status === "confirmed").length;
+    if (confirmedCount < 2) {
+      setBracketError("At least 2 confirmed participants are required.");
+      return;
+    }
+
+    // Calculate nearest power of 2
+    const powerOf2 = Math.pow(2, Math.ceil(Math.log2(confirmedCount)));
+    const totalMatches = powerOf2 / 2;
+
+    const roundOneSeeds: any[] = [];
+    for (let i = 0; i < totalMatches; i++) {
+      roundOneSeeds.push({
+        id: i + 1,
+        date: new Date().toDateString(),
+        teams: [
+          { name: "TBD", score: "", status: null },
+          { name: "TBD", score: "", status: null }
+        ]
+      });
+    }
+
+    const initialBracket = [{ title: 'Round 1', seeds: roundOneSeeds }];
+
+    // Add subsequent empty rounds
+    let currentRoundMatches = totalMatches;
+    let roundNum = 2;
+    while (currentRoundMatches > 1) {
+      currentRoundMatches /= 2;
+      const roundSeeds: any[] = [];
+      for (let i = 0; i < currentRoundMatches; i++) {
+        roundSeeds.push({
+          id: i + 100 * roundNum,
+          date: new Date().toDateString(),
+          teams: [
+            { name: "TBD", score: "", status: null },
+            { name: "TBD", score: "", status: null }
+          ]
+        });
+      }
+      initialBracket.push({ title: `Round ${roundNum}`, seeds: roundSeeds });
+      roundNum++;
+    }
+
+    setBracketData(initialBracket);
+    handleUpdateBracket(initialBracket);
+  };
+
+  const handleUpdateBracket = async (newBracketData: any[], teamToRemove?: any, teamToAdd?: any) => {
     try {
       const res = await fetch(`http://localhost:5000/api/tournaments/${tournament.id}/bracket`, {
         method: "PUT",
@@ -285,6 +399,13 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
       });
       if (res.ok) {
         setBracketData(newBracketData);
+        // Sync unassigned teams locally too for immediate feedback
+        if (teamToRemove || teamToAdd) {
+            let nextUnassigned = [...unassignedTeams];
+            if (teamToRemove) nextUnassigned.push(teamToRemove);
+            if (teamToAdd) nextUnassigned = nextUnassigned.filter(t => t.name !== teamToAdd.name);
+            setUnassignedTeams(nextUnassigned);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -536,7 +657,6 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
         </div>
       )}
 
-      {/* --- Bracket Tab --- */}
       {activeTab === "bracket" && (
         <div className="tm-panel animate-fade-in">
           <div className="tm-section-desc">Manage the tournament bracket.</div>
@@ -544,39 +664,77 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
           {bracketError && <div className="tm-alert tm-alert--error">{bracketError}</div>}
           
           {!bracketData || bracketData.length === 0 ? (
-            <div className="tm-empty" style={{marginTop: "2rem"}}>
-               <p style={{marginBottom: "1rem"}}>No bracket has been generated yet.</p>
-               <button className="tm-save-btn" onClick={handleGenerateBracket} disabled={generatingBracket}>
-                  {generatingBracket ? "Generating..." : "Generate Bracket"}
-               </button>
+            <div className="tm-gen-choices">
+                <div className="tm-gen-card" onClick={handleGenerateBracket}>
+                    <div className="tm-gen-icon"><Zap size={24} /></div>
+                    <h3>Automatic Generation</h3>
+                    <p>Randomly seed all confirmed participants into the bracket automatically.</p>
+                </div>
+                <div className="tm-gen-card" onClick={handleInitializeManualBracket}>
+                    <div className="tm-gen-icon"><Layout size={24} /></div>
+                    <h3>Manual Generation</h3>
+                    <p>Initialize an empty bracket and manually drag teams into their positions.</p>
+                </div>
             </div>
           ) : (
-            <div className="tm-bracket-wrap" style={{ overflowX: 'auto', padding: '2rem 0', display: 'flex', flexDirection: 'column' }}>
-               <Bracket 
-                  rounds={bracketData} 
-                  renderSeedComponent={(props: any) => (
-                      <CustomSeed 
-                          seed={props.seed} 
-                          roundIndex={props.roundIndex}
-                          seedIndex={props.seedIndex}
-                          bracketData={bracketData}
-                          onUpdate={handleUpdateBracket}
-                      />
-                  )} 
-               />
-               <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2rem' }}>
-                   <button 
-                       className="tm-save-btn" 
-                       style={{ background: '#ef4444', borderColor: '#ef4444', fontSize: '12px', padding: '6px 12px', width: 'auto', opacity: 0.8 }}
-                       onClick={() => {
-                           if (window.confirm("Are you sure you want to regenerate the bracket? This will wipe all current match data.")) {
-                               handleGenerateBracket();
-                           }
-                       }}
-                       disabled={generatingBracket}
-                   >
-                       {generatingBracket ? "Regenerating..." : "Reset Bracket"}
-                   </button>
+            <div className="tm-bracket-view">
+               {/* Team Sidebar */}
+               <div className="tm-team-sidebar animate-fade-in">
+                  <div className="tm-sidebar-header">
+                     Unassigned Teams
+                     <span className="tm-sidebar-count">{unassignedTeams.length}</span>
+                  </div>
+                  <div className="tm-sidebar-list">
+                     {unassignedTeams.length === 0 ? (
+                        <div className="tm-sidebar-empty">All teams assigned</div>
+                     ) : (
+                        unassignedTeams.map((t, idx) => (
+                           <div 
+                              key={t.id || idx} 
+                              className="tm-draggable-team"
+                              draggable
+                              onDragStart={(e) => {
+                                 e.dataTransfer.setData("application/json", JSON.stringify({ type: 'list', team: t }));
+                              }}
+                           >
+                              <span>{t.name}</span>
+                           </div>
+                        ))
+                     )}
+                  </div>
+               </div>
+
+               {/* Bracket Workspace */}
+               <div className="tm-bracket-workspace">
+                  <div className="tm-bracket-wrap" style={{ overflowX: 'auto', padding: '1rem 0', display: 'flex', flexDirection: 'column' }}>
+                    <Bracket 
+                        rounds={bracketData} 
+                        renderSeedComponent={(props: any) => (
+                            <CustomSeed 
+                                seed={props.seed} 
+                                roundIndex={props.roundIndex}
+                                seedIndex={props.seedIndex}
+                                bracketData={bracketData}
+                                onUpdate={handleUpdateBracket}
+                            />
+                        )} 
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2rem' }}>
+                        <button 
+                            className="tm-save-btn" 
+                            style={{ background: '#ef4444', borderColor: '#ef4444', fontSize: '12px', padding: '6px 12px', width: 'auto', opacity: 0.8 }}
+                            onClick={() => {
+                                if (window.confirm("Are you sure you want to reset the bracket? This will wipe all current match data.")) {
+                                    setBracketData(null);
+                                    // Optionally call API to clear bracket in DB? 
+                                    // handleUpdateBracket(null) or similar.
+                                }
+                            }}
+                        >
+                            Reset & Regenerate
+                        </button>
+                    </div>
+                  </div>
                </div>
             </div>
           )}
