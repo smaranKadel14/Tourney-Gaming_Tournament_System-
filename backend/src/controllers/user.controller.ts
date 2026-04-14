@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User";
 import Registration from "../models/Registration";
+import Team from "../models/Team";
 
 export const getProfile = async (req: Request, res: Response) => {
     try {
@@ -10,18 +11,29 @@ export const getProfile = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        const userTeams = await Team.find({ members: userId });
+        const teamIds = userTeams.map(t => t._id);
+
         const registrations = await Registration.find({ 
-            user: userId, 
-            status: { $in: ["confirmed", "completed"] } 
+            $or: [
+                { user: userId },
+                { team: { $in: teamIds } }
+            ],
+            status: { $in: ["pending", "confirmed", "completed"] } 
         }).populate({
             path: 'tournament',
             populate: { path: 'game' }
-        }).sort({ createdAt: -1 });
+        }).populate('team', 'name logoUrl')
+        .sort({ createdAt: -1 });
 
-        const history = registrations.map(r => r.tournament).filter(Boolean);
+        const history = registrations.map(r => ({
+            ...(r.tournament as any).toObject(),
+            registeredAs: r.team ? (r.team as any).name : "Solo"
+        })).filter(h => h._id);
 
         res.json({
             ...user.toObject(),
+            teams: userTeams,
             history,
             stats: {
                 totalTournaments: history.length,
@@ -113,20 +125,34 @@ export const getPublicProfile = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        // Fetch user's teams
+        const userTeams = await Team.find({ members: id }).select("name logoUrl");
+        const teamIds = userTeams.map(t => t._id);
+
         // Fetch user's registered/played tournaments
         const registrations = await Registration.find({ 
-            user: id, 
-            status: { $in: ["confirmed", "completed"] } 
+            $or: [
+                { user: id },
+                { team: { $in: teamIds } }
+            ],
+            status: { $in: ["pending", "confirmed", "completed"] } 
         })
         .populate({
             path: "tournament",
             select: "title game startDate status imageUrl",
             populate: { path: "game", select: "title imageUrl" }
         })
+        .populate("team", "name")
         .sort({ createdAt: -1 });
 
-        // Filter out null tournaments in case of dangling references
-        const history = registrations.map(r => r.tournament).filter(Boolean);
+        // Filter out null tournaments and map display info
+        const history = registrations.map((r: any) => {
+            if (!r.tournament) return null;
+            return {
+                ...r.tournament.toObject(),
+                registeredAs: r.team ? r.team.name : "Solo"
+            };
+        }).filter(Boolean);
 
         const stats = {
             totalTournaments: history.length,
@@ -135,6 +161,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
 
         res.json({
             user,
+            teams: userTeams,
             stats,
             history
         });

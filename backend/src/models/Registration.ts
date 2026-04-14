@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IRegistration extends Document {
     user: mongoose.Types.ObjectId;
+    team?: mongoose.Types.ObjectId;
     tournament: mongoose.Types.ObjectId;
     status: "pending" | "confirmed" | "cancelled" | "rejected";
     paymentStatus: "pending" | "completed" | "failed";
@@ -17,6 +18,10 @@ const registrationSchema = new Schema<IRegistration>(
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
+        },
+        team: {
+            type: Schema.Types.ObjectId,
+            ref: "Team"
         },
         tournament: {
             type: Schema.Types.ObjectId,

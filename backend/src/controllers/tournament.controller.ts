@@ -1,5 +1,6 @@
 import Tournament from "../models/Tournament";
 import Registration from "../models/Registration";
+import Team from "../models/Team";
 import { Request, Response } from "express";
 import { createNotification } from "./notification.controller";
 import { v4 as uuidv4 } from "uuid";
@@ -81,20 +82,30 @@ export const registerForTournament = async (req: Request, res: Response): Promis
             return;
         }
 
-        // Check if user is already registered
+        // Check if user is already registered (either solo or via their team)
+        const { teamId } = req.body;
+
+        if (!teamId) {
+            res.status(400).json({ message: "Team selection is required. Please select a team to register." });
+            return;
+        }
+
         const existingRegistration = await Registration.findOne({
-            user: userId,
-            tournament: tournamentId
+            $or: [
+                { user: userId, tournament: tournamentId },
+                { team: teamId, tournament: tournamentId }
+            ]
         });
 
         if (existingRegistration) {
-            res.status(400).json({ message: "You are already registered for this tournament" });
+            res.status(400).json({ message: "Already registered for this tournament" });
             return;
         }
 
         // Create registration
         const registration = await Registration.create({
             user: userId,
+            team: teamId,
             tournament: tournamentId,
             status: "pending"
         });
@@ -222,10 +233,14 @@ export const getOrganizerTournaments = async (req: Request, res: Response): Prom
             countMap[r._id.toString()] = r.count;
         });
 
-        const result = tournaments.map(t => ({
-            ...(t as any).toObject(),
-            participantCount: countMap[t._id.toString()] ?? 0,
-        }));
+        const result = tournaments.map(t => {
+            const obj = (t as any).toObject();
+            return {
+                ...obj,
+                teamSize: obj.teamSize < 2 ? 5 : obj.teamSize, // Safety fallback for legacy data
+                participantCount: countMap[t._id.toString()] ?? 0,
+            };
+        });
 
         res.json(result);
     } catch (error) {
@@ -260,6 +275,7 @@ export const getOrganizerPlayers = async (req: Request, res: Response): Promise<
         const registrations = await Registration.find({ tournament: { $in: tournamentIds } })
             .populate("user", "fullName email avatarUrl createdAt")
             .populate("tournament", "title")
+            .populate("team", "name logoUrl")
             .sort({ createdAt: -1 });
 
         const result = registrations.map((r: any) => ({
@@ -269,6 +285,8 @@ export const getOrganizerPlayers = async (req: Request, res: Response): Promise<
             status: r.status,
             paymentStatus: r.paymentStatus,
             createdAt: r.createdAt,
+            teamName: r.team?.name,
+            teamLogo: r.team?.logoUrl,
             user: {
                 id: r.user?._id,
                 fullName: r.user?.fullName || "Unknown",
@@ -356,6 +374,7 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
             imageUrl,
             status,
             registrationFee,
+            teamSize,
         } = req.body;
 
         const tournament = await Tournament.create({
@@ -371,6 +390,7 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
             rules: rules || "",
             registrationFee: registrationFee || 0,
             maxParticipants: maxParticipants || 0,
+            teamSize: teamSize || 1,
             imageUrl,
             status: status || "upcoming"
         });
@@ -431,22 +451,35 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
             return;
         }
 
+        console.log("Updating tournament ID:", tournamentId);
+        console.log("Incoming body:", JSON.stringify(req.body, null, 2));
+
         const allowed = [
             "title", "description", "startDate", "endDate", "location",
             "registrationDeadline", "prizePool", "rules", "maxParticipants",
-            "imageUrl", "status", "registrationFee", "game"
+            "imageUrl", "status", "registrationFee", "game", "teamSize"
         ];
 
         allowed.forEach(field => {
             if (req.body[field] !== undefined) {
-                (tournament as any)[field] = req.body[field];
+                let value = req.body[field];
+                if (field === "teamSize") {
+                   value = Number(value);
+                   tournament.set("teamSize", value);
+                   tournament.markModified("teamSize");
+                   console.log(`Explicitly set teamSize to: ${value}`);
+                } else {
+                   (tournament as any).set(field, value);
+                }
+                console.log(`Updating field: ${field} =`, value);
             }
         });
 
         const updated = await tournament.save();
+        console.log("Update success. DB state teamSize:", updated.teamSize);
         res.json(updated);
     } catch (error: any) {
-        console.error("Error updating tournament:", error);
+        console.error("CRITICAL ERROR UPDATING TOURNAMENT:", error);
         res.status(500).json({ message: "Server error", details: error.message });
     }
 };
@@ -472,6 +505,7 @@ export const getTournamentRegistrations = async (req: Request, res: Response): P
 
         const registrations = await Registration.find({ tournament: tournamentId })
             .populate("user", "fullName email avatarUrl")
+            .populate("team", "name logoUrl")
             .sort({ createdAt: -1 });
 
         res.json(registrations);
@@ -524,17 +558,26 @@ export const initiateEsewaPayment = async (req: Request, res: Response): Promise
             return;
         }
 
-        const existingRegistration = await Registration.findOne({
-            user: userId,
-            tournament: tournamentId
-        });
+        const { teamId } = req.body;
 
-        if (existingRegistration && existingRegistration.paymentStatus === "completed") {
-            res.status(400).json({ message: "You are already registered for this tournament" });
+        if (!teamId) {
+            res.status(400).json({ message: "Team selection is required. Please select a team to register." });
             return;
         }
 
-        // If the tournament has no fee, we can just register them directly without eSewa
+        const existingRegistration = await Registration.findOne({
+            $or: [
+                { user: userId, tournament: tournamentId },
+                { team: teamId, tournament: tournamentId }
+            ]
+        });
+
+        if (existingRegistration && existingRegistration.paymentStatus === "completed") {
+            res.status(400).json({ message: "Already registered for this tournament" });
+            return;
+        }
+
+        // Check if the tournament has no fee, we can just register them directly without eSewa
         if (!tournament.registrationFee || tournament.registrationFee <= 0) {
             res.status(400).json({ message: "No registration fee required. Use standard registration endpoint." });
             return;
@@ -547,10 +590,12 @@ export const initiateEsewaPayment = async (req: Request, res: Response): Promise
         if (existingRegistration) {
             existingRegistration.transactionId = transactionUuid;
             existingRegistration.paymentStatus = "pending";
+            existingRegistration.team = teamId;
             await existingRegistration.save();
         } else {
             await Registration.create({
                 user: userId,
+                team: teamId,
                 tournament: tournamentId,
                 status: "pending",
                 paymentStatus: "pending",
@@ -641,5 +686,196 @@ export const esewaFailure = async (req: Request, res: Response): Promise<void> =
     } catch (error) {
         console.error("Error handling eSewa failure:", error);
         res.redirect('http://localhost:5173/payment/failure');
+    }
+};
+
+// @desc    Generate bracket for a tournament
+// @route   POST /api/tournaments/:id/bracket/generate
+// @access  Private (Organizer/Admin)
+export const generateBracket = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        // Fetch confirmed registrations
+        const registrations = await Registration.find({ tournament: tournamentId, status: "confirmed" })
+            .populate("user", "fullName")
+            .populate("team", "name");
+        
+        if (registrations.length < 2) {
+            res.status(400).json({ message: "At least 2 confirmed participants are required to generate a bracket" });
+            return;
+        }
+
+        // Shuffle participants randomly
+        const participants = registrations.map(r => ({
+            id: r.team ? (r.team as any)._id?.toString() : ((r.user as any)._id?.toString() || (r.user as any).id),
+            name: r.team ? (r.team as any).name : ((r.user as any).fullName || "Unknown Player")
+        })).sort(() => 0.5 - Math.random());
+
+        // Calculate nearest power of 2
+        const n = participants.length;
+        const powerOf2 = Math.pow(2, Math.ceil(Math.log2(n)));
+        const byes = powerOf2 - n;
+        const totalMatches = powerOf2 / 2;
+
+        const roundOneSeeds: any[] = [];
+
+        // Distribute byes
+        let playerIndex = 0;
+        let matchIdCounter = 1;
+
+        for (let i = 0; i < totalMatches; i++) {
+            const team1 = participants[playerIndex++];
+            let team2 = null;
+
+            if (i >= (totalMatches - byes) && playerIndex < participants.length) {
+                 // Wait, logic for byes. 
+                 // If byes = 2, we want 2 matches to have a bye.
+            }
+            if (!team2 && playerIndex < participants.length && i >= byes) {
+                 team2 = participants[playerIndex++];
+            }
+
+            roundOneSeeds.push({
+                id: matchIdCounter++,
+                date: new Date().toDateString(),
+                teams: [
+                    { ...team1, score: "", status: null },
+                    team2 ? { ...team2, score: "", status: null } : { name: "BYE", score: "", status: "L", isBye: true }
+                ]
+            });
+        }
+
+        const bracketData = [
+            {
+                title: 'Round 1',
+                seeds: roundOneSeeds
+            }
+        ];
+
+        // Generate Subsequent Empty Rounds
+        let currentRoundMatches = totalMatches;
+        let roundNum = 2;
+        while (currentRoundMatches > 1) {
+            currentRoundMatches = currentRoundMatches / 2;
+            const roundSeeds: any[] = [];
+            for (let i = 0; i < currentRoundMatches; i++) {
+                roundSeeds.push({
+                    id: matchIdCounter++,
+                    date: new Date().toDateString(),
+                    teams: [
+                        { name: "TBD", score: "", status: null },
+                        { name: "TBD", score: "", status: null }
+                    ]
+                });
+            }
+            bracketData.push({
+                title: `Round ${roundNum}`,
+                seeds: roundSeeds
+            });
+            roundNum++;
+        }
+
+        // Auto-advance byes from Round 1 to Round 2
+        if (bracketData.length > 1) {
+            bracketData[0].seeds.forEach((seed: any, index: number) => {
+                if (seed.teams[1]?.isBye) {
+                    seed.teams[0].status = "W";
+                    const nextMatchIndex = Math.floor(index / 2);
+                    const teamPositionIndex = index % 2;
+                    bracketData[1].seeds[nextMatchIndex].teams[teamPositionIndex] = {
+                        name: seed.teams[0].name,
+                        score: "",
+                        status: null
+                    };
+                }
+            });
+        }
+
+        tournament.bracketData = bracketData;
+        await tournament.save();
+
+        res.json({ message: "Bracket generated successfully", bracketData });
+    } catch (error) {
+        console.error("Error generating bracket:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// @desc    Update tournament bracket data
+// @route   PUT /api/tournaments/:id/bracket
+// @access  Private (Organizer/Admin)
+export const updateBracket = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const user = (req as any).user;
+        const { bracketData } = req.body;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        tournament.bracketData = bracketData;
+        await tournament.save();
+
+        res.json({ message: "Bracket updated successfully", bracketData });
+    } catch (error) {
+        console.error("Error updating bracket:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// @desc    Check whether the logged in user is registered for the given tournament
+// @route   GET /api/tournaments/:id/registration-status
+// @access  Private
+export const checkRegistrationStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const tournamentId = req.params.id;
+        const userId = (req as any).user.id || (req as any).user._id;
+
+        // Find user's teams
+        const userTeams = await Team.find({ members: userId });
+        const teamIds = userTeams.map(t => t._id);
+
+        const registration = await Registration.findOne({
+            tournament: tournamentId,
+            $or: [
+                { user: userId },
+                { team: { $in: teamIds } }
+            ]
+        });
+
+        if (registration) {
+            res.json({ 
+                isRegistered: true, 
+                paymentStatus: registration.paymentStatus, 
+                status: registration.status,
+                teamName: (registration as any).team?.name // Note: might need populating if user wants it
+            });
+        } else {
+            res.json({ isRegistered: false, paymentStatus: null, status: null });
+        }
+    } catch (error) {
+        console.error("Error checking registration status:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };

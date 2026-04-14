@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { api, BASE_URL } from "../../../lib/api";
 import PlayerNavbar from "./PlayerNavbar";
 import { getToken } from "../../../utils/auth";
 import ImageCropper from "../../common/ImageCropper";
-import { User as UserIcon, Calendar, MapPin, Share2, Trophy, Target, Activity, Shield, Camera, Trash2, Edit2, Save, X } from "lucide-react";
+import { User as UserIcon, Calendar, MapPin, Share2, Trophy, Target, Activity, Camera, Trash2, Edit2, Save, X } from "lucide-react";
 import bg from "../../../assets/home/background.png";
 import valImg from "../../../assets/Tournaments/VAL.png";
 import codImg from "../../../assets/Tournaments/COD.png";
@@ -17,6 +17,7 @@ interface UserProfile {
   bio: string;
   avatarUrl: string;
   role: string;
+  updatedAt: string;
   history?: TournamentHistory[];
   stats?: {
     totalTournaments: number;
@@ -46,7 +47,7 @@ export default function PlayerProfile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users/profile", {
+      const res = await api.get("/users/profile", {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       setProfile(res.data);
@@ -58,8 +59,8 @@ export default function PlayerProfile() {
 
   const handleRemoveAvatar = async () => {
     try {
-      const res = await axios.put(
-        "http://localhost:5000/api/users/profile",
+      const res = await api.put(
+        "/users/profile",
         { avatarUrl: "" },
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -92,7 +93,7 @@ export default function PlayerProfile() {
     formData.append("avatar", croppedBlob, "avatar.jpg");
 
     try {
-      await axios.post("http://localhost:5000/api/users/avatar", formData, {
+      await api.post("/users/avatar", formData, {
         headers: {
            Authorization: `Bearer ${getToken()}`,
           "Content-Type": "multipart/form-data",
@@ -110,8 +111,8 @@ export default function PlayerProfile() {
 
   const handleSaveProfile = async () => {
     try {
-      const res = await axios.put(
-        "http://localhost:5000/api/users/profile",
+      const res = await api.put(
+        "/users/profile",
         editForm,
         { headers: { Authorization: `Bearer ${getToken()}` } }
       );
@@ -131,70 +132,6 @@ export default function PlayerProfile() {
 
   return (
     <div className="pt-page">
-      <style>{`
-        .avatar-edit-overlay {
-          position: absolute;
-          inset: 0;
-          border-radius: 16px;
-          background: rgba(0,0,0,0.6);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.2s;
-          gap: 12px;
-        }
-        .pubprof-avatar-wrap:hover .avatar-edit-overlay {
-          opacity: 1;
-        }
-        .avatar-action-btn {
-          background: rgba(255,255,255,0.2);
-          border: none;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .avatar-action-btn:hover {
-          background: #a200ff;
-        }
-        .avatar-action-btn.danger:hover {
-          background: #ff4444;
-        }
-        .edit-input {
-          background: rgba(0,0,0,0.5);
-          border: 1px solid rgba(162, 0, 255, 0.4);
-          color: white;
-          padding: 8px 12px;
-          border-radius: 8px;
-          font-size: 2rem;
-          font-weight: 900;
-          width: 100%;
-          font-family: inherit;
-          max-width: 300px;
-        }
-        .edit-textarea {
-          background: rgba(0,0,0,0.5);
-          border: 1px solid rgba(162, 0, 255, 0.4);
-          color: white;
-          padding: 12px;
-          border-radius: 8px;
-          font-size: 0.9rem;
-          width: 100%;
-          max-width: 400px;
-          height: 80px;
-          font-family: inherit;
-          resize: none;
-          margin-top: 8px;
-        }
-      `}</style>
-      
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -215,24 +152,30 @@ export default function PlayerProfile() {
           <div className="pubprof-header">
             <div className="pubprof-avatar-wrap">
               {profile.avatarUrl ? (
-                <img src={`http://localhost:5000${profile.avatarUrl}`} alt={profile.fullName} className="pubprof-avatar" />
-              ) : (
-                <div className="pubprof-avatar-fallback">
-                  <UserIcon size={64} />
-                </div>
-              )}
-              <div className="pubprof-avatar-badge">
-                <Shield size={16} color="white" fill="white" />
+                <img 
+                  src={`${BASE_URL}${profile.avatarUrl}?t=${new Date(profile.updatedAt).getTime()}`} 
+                  alt={profile.fullName} 
+                  className="pubprof-avatar" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "";
+                    (e.target as HTMLImageElement).style.display = "none";
+                    (e.target as HTMLImageElement).parentElement?.classList.add("fallback-active");
+                  }}
+                />
+              ) : null}
+              
+              <div className="pubprof-avatar-fallback avatar-placeholder" style={{ display: profile.avatarUrl ? 'none' : 'flex' }}>
+                <UserIcon size={64} />
               </div>
 
               {/* Edit Avatar Overlay */}
               <div className="avatar-edit-overlay">
                 <button className="avatar-action-btn" onClick={handleUploadAvatar} title="Change Avatar">
-                  <Camera size={18} />
+                  <Camera size={20} />
                 </button>
                 {profile.avatarUrl && (
                   <button className="avatar-action-btn danger" onClick={handleRemoveAvatar} title="Remove Avatar">
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
                 )}
               </div>

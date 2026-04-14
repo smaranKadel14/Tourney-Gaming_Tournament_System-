@@ -13,8 +13,10 @@ export interface ITournament extends Document {
     rules: string;
     registrationFee: number;
     maxParticipants: number;
+    teamSize: number;
     imageUrl: string;
     status: "upcoming" | "ongoing" | "completed";
+    bracketData?: any;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -71,6 +73,10 @@ const tournamentSchema = new Schema<ITournament>(
             type: Number,
             default: 0, // 0 means unlimited
         },
+        teamSize: {
+            type: Number,
+            default: 5, // Default to a standard team size
+        },
         imageUrl: {
             type: String,
             required: true,
@@ -79,6 +85,10 @@ const tournamentSchema = new Schema<ITournament>(
             type: String,
             enum: ["upcoming", "ongoing", "completed"],
             default: "upcoming",
+        },
+        bracketData: {
+            type: Schema.Types.Mixed,
+            default: null,
         },
     },
     {
