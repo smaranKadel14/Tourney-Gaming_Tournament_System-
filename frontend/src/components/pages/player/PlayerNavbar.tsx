@@ -12,7 +12,7 @@ export default function PlayerNavbar() {
 
   return (
     <header className="ph__nav">
-      <div className="ph__logo">LOGO</div>
+      <div className="ph__logo">TOURNEY</div>
 
       <nav className="ph__links">
         <Link to="/player" className={location.pathname === "/player" ? "active" : ""}>Home</Link>

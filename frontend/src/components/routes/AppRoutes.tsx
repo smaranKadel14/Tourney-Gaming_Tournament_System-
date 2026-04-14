@@ -21,6 +21,7 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminTournaments from "../pages/admin/AdminTournaments";
 import AdminLogs from "../pages/admin/AdminLogs";
 import AdminSettings from "../pages/admin/AdminSettings";
+import AdminMessages from "../pages/admin/AdminMessages";
 
 import ProtectedRoute from "./ProtectedRoutes";
 import PublicOnlyRoute from "./PublicOnlyRoutes";
@@ -176,6 +177,15 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminSettings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/messages"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminMessages />
           </ProtectedRoute>
         }
       />

@@ -213,7 +213,7 @@ export default function PlayerProfile() {
                     </div>
                   </div>
                   <div style={{ color: '#cbd5e1', fontSize: 14 }}>
-                    {profile.bio || "Click 'Edit Profile' to add a custom biography."}
+                    {profile.bio}
                   </div>
                 </>
               )}

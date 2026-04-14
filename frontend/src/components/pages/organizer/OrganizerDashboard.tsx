@@ -190,7 +190,7 @@ const OrganizerDashboard = () => {
     <div className="od">
       {/* Sidebar */}
       <aside className="od__sidebar">
-        <div className="od__brand">LOGO</div>
+        <div className="od__brand">TOURNEY</div>
 
         <nav className="od__menu">
           <button 

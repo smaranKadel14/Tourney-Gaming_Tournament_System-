@@ -270,3 +270,71 @@
         align-items: center;
     }
 }
+
+/* FORM STATUS ALERTS */
+.pc-status-alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: pc-fadeIn 0.3s ease-out;
+}
+
+@keyframes pc-fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pc-status-alert.submitting {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pc-status-alert.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.pc-status-alert.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-flex {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spinner-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spinner-inline svg {
+    animation: pc-spin 1s linear infinite;
+}
+
+@keyframes pc-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.pc-socials svg {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #94a3b8;
+}
+
+.pc-socials svg:hover {
+    color: #a200ff;
+    transform: translateY(-3px);
+}

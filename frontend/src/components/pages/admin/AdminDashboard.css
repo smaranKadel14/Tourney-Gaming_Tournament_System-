@@ -623,7 +623,11 @@
     gap: 16px;
   }
 
-  .admin-topbar-right .admin-search-wrap {
+    .admin-topbar-right .admin-search-wrap {
     display: none;
   }
 }
+
+}
+
+

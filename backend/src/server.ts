@@ -11,6 +11,7 @@ import notificationRoutes from "./routes/notification.routes";
 import adminRoutes from "./routes/admin.routes";
 import announcementRoutes from "./routes/announcement.routes";
 import teamRoutes from "./routes/team.routes";
+import contactRoutes from "./routes/contact.routes";
 import Setting from "./models/Setting";
 import path from "path";
 
@@ -37,6 +38,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Serve static files from the uploads directory
 const __dirname_resolved = path.resolve();
