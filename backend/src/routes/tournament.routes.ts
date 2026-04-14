@@ -14,6 +14,9 @@ import {
     esewaSuccess,
     esewaFailure,
     deleteTournament,
+    generateBracket,
+    updateBracket,
+    checkRegistrationStatus,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 
@@ -25,7 +28,10 @@ router.get("/organizer/players", protect, authorize("organizer", "admin"), getOr
 router.get("/organizer/stats", protect, authorize("organizer", "admin"), getOrganizerStats);
 router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
+router.get("/:id/registration-status", protect, checkRegistrationStatus);
 router.put("/:id", protect, authorize("organizer", "admin"), updateTournament);
+router.post("/:id/bracket/generate", protect, authorize("organizer", "admin"), generateBracket);
+router.put("/:id/bracket", protect, authorize("organizer", "admin"), updateBracket);
 router.get("/:id/registrations", protect, authorize("organizer", "admin"), getTournamentRegistrations);
 router.patch("/:id/registrations/:regId", protect, authorize("organizer", "admin"), updateRegistrationStatus);
 router.post("/:id/register", protect, registerForTournament);

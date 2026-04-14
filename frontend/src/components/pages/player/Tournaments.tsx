@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
-
+import { getToken } from "../../../utils/auth";
 import PlayerNavbar from "./PlayerNavbar";
 import "./Tournaments.css";
 
@@ -37,10 +37,12 @@ type Tournament = {
   prizePool: string;
   registrationFee: number;
   status: "upcoming" | "ongoing" | "completed";
+  teamSize: number;
 };
 
 export default function Tournaments() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [myHistoryIds, setMyHistoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filter States - Default to empty to show all
@@ -97,17 +99,29 @@ export default function Tournaments() {
   }, [tournaments, selectedGames, selectedGenre, showFreeOnly, status]);
 
   useEffect(() => {
-    const fetchTournaments = async () => {
+    const fetchTournamentsAndHistory = async () => {
       try {
         const response = await api.get('/tournaments');
         setTournaments(response.data);
+
+        // Fetch user history to see if they're registered
+        const token = getToken();
+        if (token) {
+           const profileRes = await api.get('/users/profile', {
+             headers: { Authorization: `Bearer ${token}` }
+           });
+           if (profileRes.data && profileRes.data.history) {
+               const ids = profileRes.data.history.map((t: any) => typeof t === 'string' ? t : t._id);
+               setMyHistoryIds(ids);
+           }
+        }
       } catch (error) {
         console.error("Error fetching tournaments:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchTournaments();
+    fetchTournamentsAndHistory();
   }, []);
 
   const toggleGame = (game: string) => {
@@ -252,6 +266,20 @@ export default function Tournaments() {
                         <div className="pt-badge-entry">
                            ENTRY: {tourney.registrationFee > 0 ? `Rs ${tourney.registrationFee}` : "FREE"}
                         </div>
+                        <div className="pt-badge-type" style={{
+                            position: 'absolute',
+                            top: '12px',
+                            left: '12px',
+                            background: '#a200ff',
+                            color: 'white',
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            letterSpacing: '0.5px'
+                        }}>
+                           TEAM ({(tourney.teamSize && tourney.teamSize >= 2) ? tourney.teamSize : 5})
+                        </div>
                       </div>
 
                       {/* Content Block */}
@@ -278,7 +306,11 @@ export default function Tournaments() {
                         </div>
 
                         <div className="pt-card-footer" style={{ justifyContent: 'flex-end' }}>
-                          <button className="pt-card-action-btn pt-btn-outline">REGISTER NOW</button>
+                          {myHistoryIds.includes(tourney._id) ? (
+                              <button className="pt-card-action-btn pt-btn-outline" style={{background: '#22c55e', color: 'white', borderColor: '#22c55e'}} onClick={(e) => { e.preventDefault(); }}>JOINED</button>
+                          ) : (
+                              <button className="pt-card-action-btn pt-btn-outline">REGISTER NOW</button>
+                          )}
                         </div>
                       </div>
                     </div>

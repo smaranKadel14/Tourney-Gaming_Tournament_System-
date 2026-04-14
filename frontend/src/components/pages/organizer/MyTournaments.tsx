@@ -21,6 +21,7 @@ export type TournamentRow = {
   description?: string;
   maxParticipants?: number;
   registrationFee?: number;
+  teamSize?: number;
   imageUrl?: string;
 };
 

@@ -64,7 +64,7 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
 export const createNotification = async (data: {
     recipient: string;
     actor?: string;
-    type: "registration" | "payment" | "tournament_update" | "system";
+    type: "registration" | "payment" | "tournament_update" | "system" | "team_request" | "team_response" | "team_kicked" | "team_captain_promoted" | "team_member_left";
     message: string;
     link?: string;
 }) => {

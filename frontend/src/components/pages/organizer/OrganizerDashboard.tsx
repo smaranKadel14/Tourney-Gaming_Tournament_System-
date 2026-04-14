@@ -105,6 +105,7 @@ const OrganizerDashboard = () => {
             maxParticipants: t.maxParticipants,
             registrationFee: t.registrationFee,
             imageUrl: t.imageUrl,
+            teamSize: (t.teamSize && t.teamSize >= 2) ? t.teamSize : 5,
           }));
           setTournaments(formatted);
         }
@@ -405,6 +406,7 @@ const OrganizerDashboard = () => {
             tournament={managingTournament}
             onBack={() => setActiveView("my-tournaments")}
             onDeleted={(id) => setTournaments(prev => prev.filter(t => t.id !== id))}
+            onUpdate={(updatedData: any) => setTournaments(prev => prev.map(t => t.id === updatedData.id ? updatedData : t))}
           />
         ) : activeView === "players" ? (
           <OrganizerPlayers />

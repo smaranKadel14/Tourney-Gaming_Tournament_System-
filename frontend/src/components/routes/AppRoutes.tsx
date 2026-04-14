@@ -12,6 +12,7 @@ import Contact from "../pages/player/Contact";
 import PlayerProfile from "../pages/player/PlayerProfile";
 import PublicProfile from "../pages/player/PublicProfile";
 import Community from "../pages/player/Community";
+import TeamProfile from "../pages/player/TeamProfile";
 import TournamentDetails from "../pages/player/TournamentDetails";
 import PaymentFailure from "../pages/player/PaymentFailure";
 import OrganizerDashboard from "../pages/organizer/OrganizerDashboard";
@@ -111,6 +112,15 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["player"]}>
             <Community />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/player/team/:id"
+        element={
+          <ProtectedRoute allowedRoles={["player"]}>
+            <TeamProfile />
           </ProtectedRoute>
         }
       />

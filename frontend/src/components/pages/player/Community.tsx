@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
-import { Search, User as UserIcon, Megaphone, Trash2 } from "lucide-react";
+import { Search, User as UserIcon, Megaphone, Trash2, Users } from "lucide-react";
 import { getToken, getAuthUser } from "../../../utils/auth";
 import PlayerNavbar from "./PlayerNavbar";
 import bg from "../../../assets/home/background.png";
@@ -14,6 +14,18 @@ type UserSearchResult = {
   role: string;
   avatarUrl?: string;
   bio?: string;
+};
+
+type TeamResult = {
+  _id: string;
+  name: string;
+  logoUrl?: string;
+  bio?: string;
+  captain: {
+    _id: string;
+    fullName: string;
+  };
+  members: any[];
 };
 
 type Announcement = {
@@ -31,20 +43,29 @@ type Announcement = {
 
 export default function Community() {
   const [query, setQuery] = useState("");
+  const [teamQuery, setTeamQuery] = useState("");
   const [users, setUsers] = useState<UserSearchResult[]>([]);
+  const [teams, setTeams] = useState<TeamResult[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
+  const [teamsLoading, setTeamsLoading] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [noticeTitle, setNoticeTitle] = useState("");
   const [noticeContent, setNoticeContent] = useState("");
 
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamBio, setNewTeamBio] = useState("");
+
   const currentUser = getAuthUser();
   const isOrganizerOrAdmin = currentUser?.role === "organizer" || currentUser?.role === "admin";
+  const isPlayer = currentUser?.role === "player";
 
   useEffect(() => {
     fetchAnnouncements();
     handleSearch("");
+    handleSearchTeams("");
   }, []);
 
   const fetchAnnouncements = async () => {
@@ -54,6 +75,39 @@ export default function Community() {
     } catch (err) {
       console.error("Error fetching notices:", err);
     }
+  };
+
+  const handleSearchTeams = async (q: string) => {
+    try {
+      setTeamsLoading(true);
+      const res = await api.get("/teams"); // For now just fetch all teams or add search filter if needed
+      if (q) {
+          const filtered = res.data.filter((t: any) => t.name.toLowerCase().includes(q.toLowerCase()));
+          setTeams(filtered);
+      } else {
+          setTeams(res.data);
+      }
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
+
+  const handleCreateTeam = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newTeamName.trim()) return;
+      try {
+          await api.post("/teams", { name: newTeamName, bio: newTeamBio }, {
+              headers: { Authorization: `Bearer ${getToken()}` }
+          });
+          setIsTeamModalOpen(false);
+          setNewTeamName("");
+          setNewTeamBio("");
+          handleSearchTeams("");
+      } catch (err: any) {
+          alert(err.response?.data?.message || "Failed to create team");
+      }
   };
 
   const handleSearch = async (searchQuery: string) => {
@@ -169,6 +223,61 @@ export default function Community() {
             </div>
           </section>
 
+          {/* Teams Section */}
+          <section className="comm-section">
+            <div className="comm-section-header">
+              <h2 className="comm-section-title">
+                <Users color="#a200ff" />
+                Active Teams
+              </h2>
+              {isPlayer && (
+                <button className="comm-btn" onClick={() => setIsTeamModalOpen(true)}>
+                  Create Team
+                </button>
+              )}
+            </div>
+
+            <form className="comm-search-bar" onSubmit={(e) => { e.preventDefault(); handleSearchTeams(teamQuery); }}>
+              <input 
+                type="text" 
+                placeholder="Search for esports teams..." 
+                value={teamQuery}
+                onChange={(e) => { setTeamQuery(e.target.value); handleSearchTeams(e.target.value); }}
+              />
+              <button type="submit"><Search size={20} strokeWidth={1.5} /></button>
+            </form>
+
+            <div className="comm-grid">
+              {teamsLoading ? (
+                <div className="comm-state-msg">Loading teams...</div>
+              ) : teams.length === 0 ? (
+                <div className="comm-state-msg">No teams found.</div>
+              ) : (
+                teams.map(team => (
+                  <Link to={`/player/team/${team._id}`} key={team._id} className="comm-card">
+                    <div className="comm-card-header">
+                      {team.logoUrl ? (
+                         <img src={`http://localhost:5000${team.logoUrl}`} alt="" className="comm-avatar" />
+                      ) : (
+                         <div className="comm-avatar-placeholder"><Users size={24} /></div>
+                      )}
+                      <div className="comm-user-info">
+                        <h3 className="comm-user-name">{team.name}</h3>
+                        <span className="comm-user-role">Captain: {team.captain.fullName}</span>
+                      </div>
+                    </div>
+                    <div className="comm-card-body">
+                      <p>{team.bio || "Building a legacy..."}</p>
+                      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '5px', fontSize: '10px', color: '#94a3b8' }}>
+                         <span style={{ padding: '2px 6px', background: '#1e293b', borderRadius: '4px' }}>{team.members.length} Members</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+
           {/* Player Search Section */}
           <section className="comm-section">
             <div className="comm-section-header">
@@ -244,6 +353,37 @@ export default function Community() {
               <div className="comm-modal-actions">
                 <button type="button" className="comm-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
                 <button type="submit" className="comm-btn">Publish Notice</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Team Modal */}
+      {isTeamModalOpen && (
+        <div className="comm-modal-overlay">
+          <div className="comm-modal">
+            <h2>Start your Journey</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>As a captain, you can recruit players and enter tournaments together.</p>
+            <form onSubmit={handleCreateTeam}>
+              <input 
+                type="text" 
+                placeholder="Team Name" 
+                className="comm-input" 
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+                required
+              />
+              <textarea 
+                placeholder="Team Vision / Biography" 
+                className="comm-textarea"
+                style={{ height: '100px' }}
+                value={newTeamBio}
+                onChange={(e) => setNewTeamBio(e.target.value)}
+              ></textarea>
+              <div className="comm-modal-actions">
+                <button type="button" className="comm-btn-cancel" onClick={() => setIsTeamModalOpen(false)}>Cancel</button>
+                <button type="submit" className="comm-btn">Forge Team</button>
               </div>
             </form>
           </div>

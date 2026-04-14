@@ -25,6 +25,7 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
     registrationFee: 0,
     rules: "",
     maxParticipants: 0,
+    teamSize: 5,
     imageUrl: "",
     status: "upcoming",
   });
@@ -145,6 +146,11 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
           <div className="ct-group">
             <label>Registration Fee (eSewa Amount)</label>
             <input type="number" name="registrationFee" value={formData.registrationFee} onChange={handleChange} min="0" placeholder="0 for free" required />
+          </div>
+
+          <div className="ct-group">
+            <label>Team Size (Members per team)</label>
+            <input type="number" name="teamSize" value={formData.teamSize} onChange={handleChange} min="2" required />
           </div>
 
           <div className="ct-group ct-full-width">
