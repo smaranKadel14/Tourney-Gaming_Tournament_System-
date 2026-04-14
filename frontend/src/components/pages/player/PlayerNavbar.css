@@ -8,8 +8,8 @@
 
 .ph__logo {
   font-weight: 800;
-  letter-spacing: 1px;
-  font-size: 20px;
+  letter-spacing: 1.5px;
+  font-size: 22px;
 }
 
 .ph__links {
@@ -63,11 +63,15 @@
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
+  margin: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 0;
 }
 
 .ph__logoutBtn:hover {
   color: #ef4444;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .ph__profile-link {
@@ -77,10 +81,13 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  line-height: 0;
 }
 
 .ph__profile-link:hover,
 .ph__profile-link.active {
   color: #fff;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }

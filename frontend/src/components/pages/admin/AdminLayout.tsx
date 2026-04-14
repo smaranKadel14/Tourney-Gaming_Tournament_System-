@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus, Mail } from "lucide-react";
 import { clearAuthUser } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -27,7 +27,7 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
     <div className="admin-shell">
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-brand">LOGO</div>
+        <div className="admin-brand">TOURNEY</div>
 
         <nav className="admin-nav">
           <button 
@@ -47,6 +47,12 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
             onClick={() => navigate('/admin/tournaments')}
           >
             <Trophy className="admin-nav-ic" size={16} /> Tournaments
+          </button>
+          <button 
+            className={`admin-nav-item ${isActive('/admin/messages') ? 'admin-nav-item--active' : ''}`}
+            onClick={() => navigate('/admin/messages')}
+          >
+            <Mail className="admin-nav-ic" size={16} /> Messages
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/logs') ? 'admin-nav-item--active' : ''}`}

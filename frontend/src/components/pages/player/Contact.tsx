@@ -1,10 +1,55 @@
+import { useState } from "react";
 import PlayerNavbar from "./PlayerNavbar";
+import { api } from "../../../lib/api";
+import { Mail, Phone, MapPin, Send, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import "./Contact.css";
 
 // Assets
 import bg from "../../../assets/bg.png";
 
 export default function Contact() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    message: ""
+  });
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [statusMsg, setStatusMsg] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+      setStatus("error");
+      setStatusMsg("Please fill in all required fields.");
+      return;
+    }
+
+    setStatus("submitting");
+    try {
+      const res = await api.post("/contact", formData);
+      setStatus("success");
+      setStatusMsg(res.data.message);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        message: ""
+      });
+    } catch (err: any) {
+      console.error("Contact submission error:", err);
+      setStatus("error");
+      setStatusMsg(err.response?.data?.message || "Failed to send message. Please try again later.");
+    }
+  };
+
   return (
     <div className="pc-page">
       {/* Background with Purple Glow */}
@@ -30,34 +75,31 @@ export default function Contact() {
             
             <div className="pc-info-item">
               <div className="pc-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
+                <MapPin size={32} color="#a200ff" />
               </div>
               <div className="pc-info-text">
-                <p>Nepal, Kathmandu</p>
+                <p>Lazimpat, Kathmandu</p>
+                <p style={{ fontSize: '13px', opacity: 0.7 }}>Corporate Headquarters</p>
               </div>
             </div>
 
             <div className="pc-info-item">
               <div className="pc-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.03 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
-                </svg>
+                <Phone size={32} color="#a200ff" />
               </div>
               <div className="pc-info-text">
-                <p className="pc-highlight">123-335-9958</p>
+                <p className="pc-highlight">+977-9801234567</p>
+                <p style={{ fontSize: '13px', opacity: 0.7 }}>Mon - Fri, 9am - 6pm</p>
               </div>
             </div>
 
             <div className="pc-info-item">
               <div className="pc-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                </svg>
+                <Mail size={32} color="#a200ff" />
               </div>
               <div className="pc-info-text">
-                <p className="pc-highlight">contact@mysite.com</p>
+                <p className="pc-highlight">support@tourney.com</p>
+                <p style={{ fontSize: '13px', opacity: 0.7 }}>Email Inquiry System</p>
               </div>
             </div>
 
@@ -65,44 +107,83 @@ export default function Contact() {
 
           {/* Right Column: Contact Form */}
           <div className="pc-form">
-            <div className="pc-form-row">
-              <div className="pc-form-group">
-                <label>First Name</label>
-                <input type="text" className="pc-input" />
+            <form onSubmit={handleSubmit}>
+              <div className="pc-form-row">
+                <div className="pc-form-group">
+                  <label>First Name</label>
+                  <input 
+                    type="text" 
+                    name="firstName"
+                    className="pc-input" 
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="pc-form-group">
+                  <label>Last Name</label>
+                  <input 
+                    type="text" 
+                    name="lastName"
+                    className="pc-input" 
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
-              <div className="pc-form-group">
-                <label>Last Name</label>
-                <input type="text" className="pc-input" />
+              
+              <div className="pc-form-group" style={{ marginTop: '25px' }}>
+                <label>Email Address*</label>
+                <input 
+                  type="email" 
+                  name="email"
+                  className="pc-input" 
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-            </div>
-            
-            <div className="pc-form-group">
-              <label>Email*</label>
-              <input type="email" className="pc-input" />
-            </div>
 
-            <div className="pc-form-group">
-              <label>Message</label>
-              <textarea className="pc-input pc-textarea"></textarea>
-            </div>
+              <div className="pc-form-group" style={{ marginTop: '25px' }}>
+                <label>Your Message</label>
+                <textarea 
+                  name="message"
+                  className="pc-input pc-textarea" 
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                ></textarea>
+              </div>
 
-            <div className="pc-form-submit">
-              <button className="pc-btn">Send</button>
-            </div>
+              {status !== "idle" && (
+                <div className={`pc-status-alert ${status}`}>
+                  {status === "submitting" && <div className="spinner-inline"><Loader2 size={16} /> Sending...</div>}
+                  {status === "success" && <div className="status-flex"><CheckCircle2 size={16} /> {statusMsg}</div>}
+                  {status === "error" && <div className="status-flex"><AlertCircle size={16} /> {statusMsg}</div>}
+                </div>
+              )}
+
+              <div className="pc-form-submit">
+                <button type="submit" className="pc-btn" disabled={status === "submitting"}>
+                  {status === "submitting" ? "Processing..." : "Send Message"}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
         {/* Footer */}
         <footer className="pc-footer">
           <div className="pc-socials">
-            <span>f</span>
-            <span>t</span>
-            <span>G+</span>
+            <Facebook size={24} />
+            <Twitter size={24} />
+            <Instagram size={24} />
+            <Linkedin size={24} />
           </div>
           <p className="pc-copyright">
-            © 2026 NK GROUP INC. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
-            <br />LOGOS ARE REGISTERED TRADEMARKS. AND RELATED LOGOS ARE REGISTERED TRADEMARKS OR TRADEMARKS OF ID SOFTWARE LLC IN
-            <br />THE U.S. AND/OR OTHER COUNTRIES. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
+            © 2026 TOURNEY NEPAL. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
+            <br />LOGOS ARE REGISTERED TRADEMARKS. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
           </p>
         </footer>
       </div>

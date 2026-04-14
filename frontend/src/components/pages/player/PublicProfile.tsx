@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getToken } from "../../../utils/auth";
-import { api } from "../../../lib/api";
+import { api, BASE_URL } from "../../../lib/api";
 import { User as UserIcon, Calendar, MapPin, Share2, UserPlus, Trophy, Target, Activity, Shield } from "lucide-react";
 import PlayerNavbar from "./PlayerNavbar";
 import bg from "../../../assets/home/background.png";
@@ -37,6 +37,7 @@ type PublicProfileData = {
     role: string;
     avatarUrl?: string;
     bio?: string;
+    updatedAt?: string;
   };
   stats: {
     totalTournaments: number;
@@ -68,57 +69,57 @@ export default function PublicProfile() {
     if (id) fetchProfile();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="pt-page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ color: '#fff' }}>Loading Profile...</h2>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="pt-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <h2 style={{ color: '#ef4444' }}>{error || "User not found"}</h2>
-        <Link to="/player/community" style={{ color: '#a200ff', textDecoration: 'none' }}>← Back to Community</Link>
-      </div>
-    );
-  }
-
-  const { user, stats, history } = data;
-
-  const dateObj = new Date(stats.memberSince);
-  const joinedDate = dateObj.toLocaleDateString('default', { month: 'long', year: 'numeric' });
-
-  return (
-    <div className="pt-page">
-      <div className="pt-bg" style={{ backgroundImage: `url(${bg})` }} />
-      <div className="pt-overlay" />
-
-      <div className="pt-wrap">
-        <PlayerNavbar />
-
-        <div className="pubprof-container">
-          <div style={{ marginBottom: 16 }}>
-            <Link to="/player/community" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
-              &larr; Back to Community
-            </Link>
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="pubprof-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          <div className="loading-spinner-wrap">
+            <div className="loading-spinner"></div>
+            <h2 style={{ color: '#fff', marginTop: '1.5rem', opacity: 0.8, fontSize: '1.5rem', fontWeight: '600' }}>Loading Profile...</h2>
           </div>
+        </div>
+      );
+    }
 
-          {/* Profile Banner */}
-          <div className="pubprof-header">
-            <div className="pubprof-avatar-wrap">
-              {user.avatarUrl ? (
-                <img src={`http://localhost:5000${user.avatarUrl}`} alt={user.fullName} className="pubprof-avatar" />
-              ) : (
-                <div className="pubprof-avatar-fallback">
-                  <UserIcon size={64} />
-                </div>
-              )}
-              <div className="pubprof-avatar-badge">
-                <Shield size={16} color="white" fill="white" />
+    if (error || !data) {
+      return (
+        <div className="pubprof-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
+          <h2 style={{ color: '#ef4444' }}>{error || "User not found"}</h2>
+          <Link to="/player/community" style={{ color: '#a200ff', textDecoration: 'none', fontWeight: 600 }}>← Back to Community</Link>
+        </div>
+      );
+    }
+
+    const { user, stats, history } = data;
+    const dateObj = new Date(stats.memberSince);
+    const joinedDate = dateObj.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+
+    return (
+      <div className="pubprof-container">
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/player/community" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>
+            &larr; Back to Community
+          </Link>
+        </div>
+
+        {/* Profile Banner */}
+        <div className="pubprof-header">
+          <div className="pubprof-avatar-wrap">
+            {user.avatarUrl ? (
+              <img 
+                src={`${BASE_URL}${user.avatarUrl}?t=${user.updatedAt ? new Date(user.updatedAt).getTime() : Date.now()}`} 
+                alt={user.fullName} 
+                className="pubprof-avatar" 
+              />
+            ) : (
+              <div className="pubprof-avatar-fallback">
+                <UserIcon size={64} />
               </div>
+            )}
+            <div className="pubprof-avatar-badge">
+              <Shield size={16} color="white" fill="white" />
             </div>
+          </div>
 
             <div className="pubprof-info">
               <div className="pubprof-name-row">
@@ -215,9 +216,20 @@ export default function PublicProfile() {
                   )}
                 </div>
               </div>
-            </div>
           </div>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="pt-page">
+      <div className="pt-bg" style={{ backgroundImage: `url(${bg})` }} />
+      <div className="pt-overlay" />
+
+      <div className="pt-wrap">
+        <PlayerNavbar />
+        {renderContent()}
       </div>
     </div>
   );

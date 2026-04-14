@@ -129,14 +129,17 @@ export const searchUsers = async (req: Request, res: Response) => {
 export const getPublicProfile = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id).select("_id fullName role avatarUrl bio createdAt");
+
+        // Parallelize initial queries
+        const [user, userTeams] = await Promise.all([
+            User.findById(id).select("_id fullName role avatarUrl bio createdAt"),
+            Team.find({ members: id }).select("name logoUrl")
+        ]);
         
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Fetch user's teams
-        const userTeams = await Team.find({ members: id }).select("name logoUrl");
         const teamIds = userTeams.map(t => t._id);
 
         // Fetch user's registered/played tournaments
@@ -155,11 +158,11 @@ export const getPublicProfile = async (req: Request, res: Response) => {
         .populate("team", "name")
         .sort({ createdAt: -1 });
 
-        // Filter out null tournaments and map display info
+        // Filter out null tournaments and map display info safely
         const history = registrations.map((r: any) => {
             if (!r.tournament) return null;
             return {
-                ...r.tournament.toObject(),
+                ...(r.tournament as any).toObject(),
                 registeredAs: r.team ? r.team.name : "Solo"
             };
         }).filter(Boolean);
@@ -176,6 +179,7 @@ export const getPublicProfile = async (req: Request, res: Response) => {
             history
         });
     } catch (error) {
+        console.error("Get Public Profile Error:", error);
         res.status(500).json({ message: "Server Error", error });
     }
 };
