@@ -40,19 +40,7 @@ const ForgotPassword = () => {
         <p className="subtitle">Enter your email to receive recovery instructions</p>
 
         {error && <div className="auth-error">{error}</div>}
-        {message && (
-          <div style={{ 
-            background: 'rgba(34, 197, 94, 0.12)', 
-            border: '1px solid rgba(34, 197, 94, 0.25)', 
-            color: '#86efac', 
-            padding: '10px 12px', 
-            borderRadius: '10px', 
-            fontSize: '13px', 
-            margin: '10px 0 16px' 
-          }}>
-            {message}
-          </div>
-        )}
+        {message && <div className="auth-success">{message}</div>}
 
         <form onSubmit={handleSubmit}>
           <label>Email Address</label>

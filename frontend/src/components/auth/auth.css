@@ -188,6 +188,17 @@ button:hover {
   margin: 10px 0 12px;
 }
 
+.auth-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #86efac;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin: 10px 0 12px;
+  text-align: center;
+}
+
 /* New Login UI Additions */
 .auth-label-row {
   display: flex;
@@ -265,4 +276,19 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.field-error {
+  color: #f87171;
+  font-size: 11px;
+  margin-top: 4px;
+  display: block;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+}
+
+.input-error:focus {
+  border-color: #dc2626 !important;
 }

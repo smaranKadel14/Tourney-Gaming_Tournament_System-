@@ -48,6 +48,10 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
+    if (!email.toLowerCase().endsWith("@gmail.com")) {
+      return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
+    }
+
     if (password.length < 6) {
       return res
         .status(400)
@@ -223,6 +227,10 @@ export const oauthLogin = async (req: Request, res: Response) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail.endsWith("@gmail.com")) {
+      return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
+    }
 
     // Find existing user by email
     let user = await User.findOne({ email: cleanEmail });

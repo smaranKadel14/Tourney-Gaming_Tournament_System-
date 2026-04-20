@@ -126,10 +126,12 @@ export const registerForTournament = async (req: Request, res: Response): Promis
 export const getOrganizerStats = async (req: Request, res: Response): Promise<void> => {
     try {
         const organizerId = (req as any).user?.id;
+        console.log("Fetching stats for organizer:", organizerId);
         
         // 1. Get tournaments owned by organizer
         const tournaments = await Tournament.find({ organizer: organizerId });
         const tournamentIds = tournaments.map(t => t._id);
+        console.log("Found tournaments:", tournaments.length, "IDs:", tournamentIds);
 
         // 2. Aggregate earnings from completed payments
         const completedRegistrations = await Registration.find({
@@ -156,25 +158,42 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
         sixMonthsAgo.setDate(1);
+        console.log("Date range for trends:", sixMonthsAgo, "to", new Date());
+
+        // Debug: Check what registrations actually exist
+        const allRegistrations = await Registration.find({
+            tournament: { $in: tournamentIds }
+        }).select('status registeredAt tournament');
+        console.log("All registrations for organizer:", allRegistrations.length, "registrations");
+        console.log("Registration details:", allRegistrations.map(r => ({
+            status: r.status,
+            registeredAt: r.registeredAt,
+            tournament: r.tournament
+        })));
+
+        console.log("Tournament IDs for query:", tournamentIds);
 
         const trends = await Registration.aggregate([
             {
                 $match: {
                     tournament: { $in: tournamentIds },
-                    createdAt: { $gte: sixMonthsAgo }
+                    status: { $in: ["confirmed", "Active", "enrolled", "Enrolled"] },
+                    registeredAt: { $gte: sixMonthsAgo }
                 }
             },
             {
                 $group: {
                     _id: {
-                        month: { $month: "$createdAt" },
-                        year: { $year: "$createdAt" }
+                        month: { $month: "$registeredAt" },
+                        year: { $year: "$registeredAt" }
                     },
                     count: { $sum: 1 }
                 }
             },
             { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]);
+
+        console.log("Aggregated Trends Data:", trends);
 
         // Format trends for the frontend
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -185,20 +204,25 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
             const month = d.getMonth() + 1;
             const year = d.getFullYear();
             
-            const match = trends.find(t => t._id.month === month && t._id.year === year);
+            const match = trends.find((t: any) => t._id.month === month && t._id.year === year);
             trendData.push({
                 label: monthNames[month - 1],
                 value: match ? match.count : 0
             });
         }
 
-        res.json({
+        console.log("Formatted trendData:", trendData);
+
+        const finalStats = {
             totalEarnings,
             pendingRevenue,
             totalPlayers: await Registration.countDocuments({ tournament: { $in: tournamentIds }, status: "confirmed" }),
             totalTournaments: tournaments.length,
             trendData
-        });
+        };
+
+        console.log("Final stats being sent:", finalStats);
+        res.json(finalStats);
     } catch (error) {
         console.error("Error fetching organizer stats:", error);
         res.status(500).json({ message: "Server error" });

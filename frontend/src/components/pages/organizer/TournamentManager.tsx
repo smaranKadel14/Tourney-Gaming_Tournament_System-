@@ -665,9 +665,14 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
           
           {!bracketData || bracketData.length === 0 ? (
             <div className="tm-gen-choices">
-                <div className="tm-gen-card" onClick={handleGenerateBracket}>
-                    <div className="tm-gen-icon"><Zap size={24} /></div>
-                    <h3>Automatic Generation</h3>
+                <div 
+                  className={`tm-gen-card ${generatingBracket ? "tm-gen-card--loading" : ""}`} 
+                  onClick={!generatingBracket ? handleGenerateBracket : undefined}
+                >
+                    <div className="tm-gen-icon">
+                      {generatingBracket ? <Loader2 size={24} className="tm-spin" /> : <Zap size={24} />}
+                    </div>
+                    <h3>{generatingBracket ? "Generating..." : "Automatic Generation"}</h3>
                     <p>Randomly seed all confirmed participants into the bracket automatically.</p>
                 </div>
                 <div className="tm-gen-card" onClick={handleInitializeManualBracket}>

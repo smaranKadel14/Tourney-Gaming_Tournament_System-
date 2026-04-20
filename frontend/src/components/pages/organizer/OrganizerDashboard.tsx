@@ -141,13 +141,26 @@ const OrganizerDashboard = () => {
     const fetchStats = async () => {
       try {
         const token = getToken();
-        if (!token) return;
+        console.log("Token available:", !!token);
+        if (!token) {
+          console.log("No token found, skipping stats fetch");
+          return;
+        }
+        
+        console.log("Fetching stats from API...");
         const res = await fetch("http://localhost:5000/api/tournaments/organizer/stats", {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        console.log("Stats API response status:", res.status);
+        
         if (res.ok) {
           const data = await res.json();
+          console.log("Stats data received:", data);
           setStats(data);
+        } else {
+          const errorText = await res.text();
+          console.error("Stats API error:", res.status, errorText);
         }
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -331,20 +344,24 @@ const OrganizerDashboard = () => {
                 </div>
                 <div className="od__chartWrap">
                   {stats?.trendData ? (
-                    <div className="od__svgChart">
-                      {stats.trendData.map((d, i) => {
-                        const maxVal = Math.max(...stats.trendData.map(v => v.value), 5);
-                        const height = (d.value / maxVal) * 100;
-                        return (
-                          <div key={i} className="od__barGroup">
-                            <div className="od__bar" style={{ height: `${height}%` }}>
-                              <div className="od__barTooltip">{d.value} players</div>
+                    <>
+                      {console.log("Rendering chart with data:", stats.trendData)}
+                      <div className="od__svgChart">
+                        {stats.trendData.map((d, i) => {
+                          const maxVal = Math.max(...stats.trendData.map(v => v.value), 5);
+                          const height = d.value > 0 ? (d.value / maxVal) * 100 : 2; // Minimum 2% height for zero values
+                          console.log(`Bar ${i}: ${d.label} = ${d.value}, height=${height}%`);
+                          return (
+                            <div key={i} className="od__barGroup">
+                              <div className="od__bar" style={{ height: `${height}%`, minHeight: '4px' }}>
+                                <div className="od__barTooltip">{d.value} players</div>
+                              </div>
+                              <span className="od__barLabel">{d.label}</span>
                             </div>
-                            <span className="od__barLabel">{d.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   ) : (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#555' }}>Loading trends...</div>
                   )}
