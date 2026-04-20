@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout } from "lucide-react";
+import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./TournamentManager.css";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
@@ -251,6 +251,10 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
           : "upcoming",
     imageUrl: tournament.imageUrl || "",
   });
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState(tournament.imageUrl ? 
+    (tournament.imageUrl.startsWith("http") ? tournament.imageUrl : `http://localhost:5000${tournament.imageUrl}`) : "");
+  
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -416,27 +420,37 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
     setSaving(true);
     setSaveMsg(null);
     try {
+      const data = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        data.append(key, value.toString());
+      });
+
+      if (bannerFile) {
+        data.append("banner", bannerFile);
+      }
+
       const res = await fetch(`http://localhost:5000/api/tournaments/${tournament.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
       });
       if (res.ok) {
         setSaveMsg({ type: "success", text: "Changes saved successfully." });
+        const updatedTournament = await res.json();
         
         // Notify parent with updated data
         if (onUpdate) {
             onUpdate({
                 ...tournament,
-                name: form.title,
-                description: form.description,
-                location: form.location,
-                prizePool: form.prizePool,
-                maxParticipants: form.maxParticipants,
-                registrationFee: form.registrationFee,
-                teamSize: form.teamSize,
-                imageUrl: form.imageUrl,
-                status: (form.status === "ongoing" ? "Live" : form.status === "completed" ? "Completed" : "Registrations Open") as any
+                name: updatedTournament.title,
+                description: updatedTournament.description,
+                location: updatedTournament.location,
+                prizePool: updatedTournament.prizePool,
+                maxParticipants: updatedTournament.maxParticipants,
+                registrationFee: updatedTournament.registrationFee,
+                teamSize: updatedTournament.teamSize,
+                imageUrl: updatedTournament.imageUrl,
+                status: (updatedTournament.status === "ongoing" ? "Live" : updatedTournament.status === "completed" ? "Completed" : "Registrations Open") as any
             });
         }
       } else {
@@ -447,6 +461,14 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
       setSaveMsg({ type: "error", text: "Server error. Please try again." });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+        const file = e.target.files[0];
+        setBannerFile(file);
+        setBannerPreview(URL.createObjectURL(file));
     }
   };
 
@@ -569,8 +591,46 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
             </div>
 
             <div className="tm-form-group tm-full-width">
-              <label>Banner Image URL</label>
-              <input value={form.imageUrl} onChange={e => setForm(p => ({ ...p, imageUrl: e.target.value }))} placeholder="https://..." />
+              <label>Banner Image</label>
+              <div className="tm-upload-container">
+                <input 
+                  type="file" 
+                  id="tm-banner-upload"
+                  accept="image/*" 
+                  onChange={handleBannerChange} 
+                  className="tm-file-input"
+                />
+                <label htmlFor="tm-banner-upload" className="tm-upload-area">
+                  {bannerPreview ? (
+                    <div className="tm-preview-wrapper">
+                      <img src={bannerPreview} alt="Banner Preview" className="tm-banner-img" />
+                      <div className="tm-preview-overlay">
+                        <Upload size={18} />
+                        <span>Replace Banner</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="tm-upload-placeholder">
+                      <Upload size={20} />
+                      <span>Upload Banner</span>
+                    </div>
+                  )}
+                </label>
+                {bannerFile && (
+                  <button 
+                    type="button" 
+                    className="tm-reset-upload"
+                    onClick={() => {
+                      setBannerFile(null);
+                      setBannerPreview(tournament.imageUrl ? 
+                        (tournament.imageUrl.startsWith("http") ? tournament.imageUrl : `http://localhost:5000${tournament.imageUrl}`) : "");
+                    }}
+                  >
+                    <X size={14} /> Reset
+                  </button>
+                )}
+              </div>
+              <p className="tm-hint" style={{ marginTop: 8, fontSize: 11 }}>Recommended ratio 16:9. PNG, JPG or WebP.</p>
             </div>
 
             <div className="tm-form-group tm-full-width">

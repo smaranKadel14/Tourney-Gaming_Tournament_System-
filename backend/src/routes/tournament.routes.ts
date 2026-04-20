@@ -19,17 +19,18 @@ import {
     checkRegistrationStatus,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
+import { bannerUpload } from "../middleware/upload";
 
 const router = express.Router();
 
-router.post("/", protect, authorize("organizer", "admin"), createTournament);
+router.post("/", protect, authorize("organizer", "admin"), bannerUpload.single("banner"), createTournament);
 router.get("/organizer/me", protect, authorize("organizer", "admin"), getOrganizerTournaments);
 router.get("/organizer/players", protect, authorize("organizer", "admin"), getOrganizerPlayers);
 router.get("/organizer/stats", protect, authorize("organizer", "admin"), getOrganizerStats);
 router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
 router.get("/:id/registration-status", protect, checkRegistrationStatus);
-router.put("/:id", protect, authorize("organizer", "admin"), updateTournament);
+router.put("/:id", protect, authorize("organizer", "admin"), bannerUpload.single("banner"), updateTournament);
 router.post("/:id/bracket/generate", protect, authorize("organizer", "admin"), generateBracket);
 router.put("/:id/bracket", protect, authorize("organizer", "admin"), updateBracket);
 router.get("/:id/registrations", protect, authorize("organizer", "admin"), getTournamentRegistrations);

@@ -5,6 +5,8 @@ import { Request, Response } from "express";
 import { createNotification } from "./notification.controller";
 import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
+import fs from "fs";
+import path from "path";
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
@@ -385,21 +387,16 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
         }
 
         const {
-            title,
-            game,
-            description,
-            startDate,
-            endDate,
-            location,
-            registrationDeadline,
-            prizePool,
-            rules,
-            maxParticipants,
-            imageUrl,
-            status,
-            registrationFee,
-            teamSize,
+            title, game, description, startDate, endDate,
+            location, registrationDeadline, prizePool,
+            rules, registrationFee, maxParticipants, teamSize,
+            status, imageUrl
         } = req.body;
+
+        let finalImageUrl = imageUrl;
+        if (req.file) {
+            finalImageUrl = `/uploads/banners/${req.file.filename}`;
+        }
 
         const tournament = await Tournament.create({
             title,
@@ -412,10 +409,10 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
             registrationDeadline,
             prizePool: prizePool || "TBA",
             rules: rules || "",
-            registrationFee: registrationFee || 0,
-            maxParticipants: maxParticipants || 0,
-            teamSize: teamSize || 1,
-            imageUrl,
+            registrationFee: Number(registrationFee) || 0,
+            maxParticipants: Number(maxParticipants) || 0,
+            teamSize: Number(teamSize) || 1,
+            imageUrl: finalImageUrl,
             status: status || "upcoming"
         });
 
@@ -445,6 +442,13 @@ export const deleteTournament = async (req: Request, res: Response): Promise<voi
         if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
             res.status(403).json({ message: "Not authorized to delete this tournament" });
             return;
+        }
+
+        if (tournament.imageUrl && tournament.imageUrl.startsWith("/uploads/banners/")) {
+            const filePath = path.join(__dirname, "../../", tournament.imageUrl);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
 
         await Tournament.findByIdAndDelete(tournamentId);
@@ -498,6 +502,22 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
                 console.log(`Updating field: ${field} =`, value);
             }
         });
+
+        // Handle new banner file upload
+        if (req.file) {
+            // Delete old file if it exists and is a local upload
+            if (tournament.imageUrl && tournament.imageUrl.startsWith("/uploads/banners/")) {
+                const oldPath = path.join(__dirname, "../../", tournament.imageUrl);
+                if (fs.existsSync(oldPath)) {
+                    try {
+                        fs.unlinkSync(oldPath);
+                    } catch (err) {
+                        console.error("Error deleting old banner:", err);
+                    }
+                }
+            }
+            tournament.imageUrl = `/uploads/banners/${req.file.filename}`;
+        }
 
         const updated = await tournament.save();
         console.log("Update success. DB state teamSize:", updated.teamSize);

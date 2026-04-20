@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./CreateTournament.css";
 import { getToken } from "../../../utils/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 
 interface Game {
   _id: string;
@@ -26,9 +26,11 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
     rules: "",
     maxParticipants: 0,
     teamSize: 5,
-    imageUrl: "",
     status: "upcoming",
   });
+
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
     // Fetch games for dropdown
@@ -52,6 +54,15 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setBannerFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setError(""); // Clear any previous errors 
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -59,13 +70,26 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
 
     try {
       const token = getToken();
+
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        data.append(key, value.toString());
+      });
+
+      if (bannerFile) {
+        data.append("banner", bannerFile);
+      } else {
+        setLoading(false);
+        setError("Tournament banner image is required");
+        return;
+      }
+
       const res = await fetch("http://localhost:5000/api/tournaments", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: data,
       });
 
       if (res.ok) {
@@ -154,25 +178,48 @@ const CreateTournament = ({ onSuccess }: { onSuccess: () => void }) => {
           </div>
 
           <div className="ct-group ct-full-width">
-            <label>Tournament Banner Image URL</label>
-            <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} required placeholder="https://example.com/banner.jpg" />
-            <div className="ct-help-text">Provide a direct web link to a banner image (e.g. from Imgur or Discord). Recommended ratio 16:9.</div>
-            {formData.imageUrl && (
-              <div className="ct-image-preview">
-                 <img 
-                    key={formData.imageUrl}
-                    src={formData.imageUrl} 
-                    alt="Banner Preview" 
-                    onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        if (e.currentTarget.nextElementSibling) {
-                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
-                        }
-                    }} 
-                 />
-                 <span style={{ display: 'none', color: '#ef4444' }}>Invalid Image URL</span>
-              </div>
-            )}
+            <label>Tournament Banner Image</label>
+            <div className={`ct-upload-area ${bannerFile ? 'has-file' : ''}`}>
+              <input 
+                type="file" 
+                id="banner-upload"
+                accept="image/*"
+                onChange={handleFileChange} 
+                className="ct-file-input"
+              />
+              <label htmlFor="banner-upload" className="ct-upload-label">
+                {previewUrl ? (
+                  <div className="ct-preview-container">
+                    <img src={previewUrl} alt="Banner Preview" className="ct-banner-preview" />
+                    <div className="ct-preview-overlay">
+                      <Upload size={20} />
+                      <span>Change Banner</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="ct-remove-banner"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setBannerFile(null);
+                        setPreviewUrl("");
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="ct-upload-placeholder">
+                    <div className="ct-upload-icon-circle">
+                      <Upload size={24} />
+                    </div>
+                    <div className="ct-upload-text">
+                      <span className="ct-upload-main-text">Click to upload tournament banner</span>
+                      <span className="ct-upload-sub-text">PNG, JPG or WebP (Recommended 16:9)</span>
+                    </div>
+                  </div>
+                )}
+              </label>
+            </div>
           </div>
         </div>
 

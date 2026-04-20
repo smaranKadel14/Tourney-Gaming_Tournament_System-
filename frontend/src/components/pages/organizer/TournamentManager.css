@@ -196,6 +196,110 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+/* Premium Upload UI */
+.tm-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.tm-file-input {
+  display: none;
+}
+
+.tm-upload-area {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  background: var(--bg-input);
+  border: 2px dashed var(--border-medium);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.tm-upload-area:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+}
+
+.tm-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.tm-upload-placeholder span {
+  font-weight: 500;
+}
+
+.tm-preview-wrapper {
+  width: 100%;
+  height: 180px;
+  position: relative;
+}
+
+.tm-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.3s ease;
+}
+
+.tm-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(2px);
+}
+
+.tm-upload-area:hover .tm-preview-overlay {
+  opacity: 1;
+}
+
+.tm-upload-area:hover .tm-banner-img {
+  filter: blur(2px);
+}
+
+.tm-reset-upload {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 12px;
+  background: var(--status-danger-bg);
+  color: var(--status-danger-text);
+  border: 1px solid var(--status-danger-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tm-reset-upload:hover {
+  background: var(--status-danger-text);
+  color: white;
+}
+
 .tm-form-actions {
   margin-top: 24px;
   display: flex;

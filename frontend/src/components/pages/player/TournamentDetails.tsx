@@ -261,7 +261,12 @@ export default function TournamentDetails() {
 
         <div className="td-content">
           <main className="td-main">
-            <header className="td-banner" style={{ backgroundImage: `url(${getGameImage(tournament.game?.title)})` }}>
+            <header 
+              className="td-banner" 
+              style={{ 
+                backgroundImage: `url(${tournament.imageUrl ? (tournament.imageUrl.startsWith('http') ? tournament.imageUrl : `http://localhost:5000${tournament.imageUrl}`) : getGameImage(tournament.game?.title)})` 
+              }}
+            >
               <div className="td-banner-overlay">
                 <span className={`td-status ${displayStatus}`}>{displayStatus}</span>
                 <h1 className="td-title">{tournament.title}</h1>
