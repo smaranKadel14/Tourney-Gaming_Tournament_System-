@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Gamepad2, Shield, Eye, EyeOff } from "lucide-react";
 import "./Auth.css";
 import { api } from "../../lib/api";
-import { saveAuth, roleHomePath } from "../../utils/auth";
 
 type RegisterResponse = {
   token: string;
@@ -32,26 +31,37 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Real-time validation
+  const getEmailError = () => {
+    if (!email) return "";
+    if (!email.toLowerCase().endsWith("@gmail.com")) return "Must be a @gmail.com address";
+    return "";
+  };
+
+  const getPasswordError = () => {
+    if (!password) return "";
+    if (password.length < 8) return "Must be at least 8 characters";
+    return "";
+  };
+
+  const getConfirmError = () => {
+    if (!confirmPassword) return "";
+    if (password !== confirmPassword) return "Passwords do not match";
+    return "";
+  };
+
+  const isFormValid = 
+    name.trim().length > 0 &&
+    email.toLowerCase().endsWith("@gmail.com") &&
+    password.length >= 8 &&
+    password === confirmPassword &&
+    agreed;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !password || !confirmPassword) {
-      setError("All fields are required");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (!agreed) {
-      setError("You must agree to the Terms and Privacy Policy");
-      return;
-    }
+    if (!isFormValid) return;
 
     try {
       setLoading(true);
@@ -63,8 +73,7 @@ const Signup = () => {
         role,
       });
 
-      saveAuth(res.data.token, res.data.user);
-      navigate(roleHomePath(res.data.user.role));
+      navigate('/login', { state: { message: "Account created successfully. Please log in." } });
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed");
     } finally {
@@ -110,10 +119,12 @@ const Signup = () => {
           <label>Email Address</label>
           <input
             type="email"
-            placeholder="name@example.com"
+            placeholder="name@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className={getEmailError() ? "input-error" : ""}
           />
+          {getEmailError() && <span className="field-error">{getEmailError()}</span>}
 
           <label>Password</label>
           <div className="auth-input-wrapper">
@@ -122,11 +133,13 @@ const Signup = () => {
               placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className={getPasswordError() ? "input-error" : ""}
             />
             <span className="auth-input-icon" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
             </span>
           </div>
+          {getPasswordError() && <span className="field-error">{getPasswordError()}</span>}
 
           <label>Confirm Password</label>
           <div className="auth-input-wrapper">
@@ -135,11 +148,13 @@ const Signup = () => {
               placeholder="Repeat password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              className={getConfirmError() ? "input-error" : ""}
             />
             <span className="auth-input-icon" onClick={() => setShowConfirm(!showConfirm)}>
               {showConfirm ? <Eye size={16} /> : <EyeOff size={16} />}
             </span>
           </div>
+          {getConfirmError() && <span className="field-error">{getConfirmError()}</span>}
 
           <div className="auth-checkbox-row">
             <input 
@@ -153,7 +168,15 @@ const Signup = () => {
             </label>
           </div>
 
-          <button type="submit" disabled={loading} style={{ marginTop: 24 }}>
+          <button 
+            type="submit" 
+            disabled={loading || !isFormValid} 
+            style={{ 
+              marginTop: 24,
+              opacity: (loading || !isFormValid) ? 0.6 : 1,
+              cursor: (loading || !isFormValid) ? "not-allowed" : "pointer"
+            }}
+          >
             {loading ? "Creating..." : "Create Account"}
           </button>
         </form>

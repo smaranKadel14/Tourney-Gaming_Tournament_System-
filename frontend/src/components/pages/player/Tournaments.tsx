@@ -38,6 +38,7 @@ type Tournament = {
   registrationFee: number;
   status: "upcoming" | "ongoing" | "completed";
   teamSize: number;
+  imageUrl?: string;
 };
 
 export default function Tournaments() {
@@ -261,7 +262,11 @@ export default function Tournaments() {
                     <div className="pt-adv-card">
                       {/* Hero Image Block */}
                       <div className="pt-card-hero">
-                        <img src={getGameImage(tourney.game?.title)} alt={tourney.game?.title} className="pt-card-img" />
+                        <img 
+                          src={tourney.imageUrl ? (tourney.imageUrl.startsWith('http') ? tourney.imageUrl : `http://localhost:5000${tourney.imageUrl}`) : getGameImage(tourney.game?.title)} 
+                          alt={tourney.title} 
+                          className="pt-card-img" 
+                        />
                         <div className="pt-card-hero-overlay"></div>
                         <div className="pt-badge-entry">
                            ENTRY: {tourney.registrationFee > 0 ? `Rs ${tourney.registrationFee}` : "FREE"}

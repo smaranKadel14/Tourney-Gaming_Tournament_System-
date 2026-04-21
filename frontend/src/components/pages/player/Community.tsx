@@ -64,7 +64,6 @@ export default function Community() {
 
   useEffect(() => {
     fetchAnnouncements();
-    handleSearch("");
     handleSearchTeams("");
   }, []);
 
@@ -178,153 +177,169 @@ export default function Community() {
             <p>The central hub for all players, news, and official tournament notices.</p>
           </header>
 
-          {/* Notice Board Section */}
-          <section className="comm-section">
-            <div className="comm-section-header">
-              <h2 className="comm-section-title">
-                <Megaphone color="#a200ff" />
-                Notice Board
-              </h2>
-              {isOrganizerOrAdmin && (
-                <button className="comm-btn" onClick={() => setIsModalOpen(true)}>
-                  + Broadcast Notice
-                </button>
-              )}
-            </div>
-
-            <div className="comm-notices">
-              {announcements.length === 0 ? (
-                <div className="comm-state-msg">No notices have been published yet.</div>
-              ) : (
-                announcements.map((notice) => (
-                  <div className="comm-notice-card" key={notice._id}>
-                    {(currentUser?.id === notice.author._id || currentUser?.role === "admin") && (
-                      <button className="comm-notice-delete" onClick={() => handleDeleteNotice(notice._id)}>
-                        <Trash2 size={20} />
-                      </button>
-                    )}
-                    <div className="comm-notice-header">
-                      {notice.author.avatarUrl ? (
-                        <img src={`http://localhost:5000${notice.author.avatarUrl}`} alt="Author" className="comm-notice-avatar" />
-                      ) : (
-                        <UserIcon size={24} color="#64748b" style={{background: '#1e293b', border: '1px solid #334155', borderRadius: '50%', padding: 4}} />
-                      )}
-                      <div>
-                        <span className="comm-notice-author">{notice.author.fullName}</span>
-                        <span className="comm-notice-role">{notice.author.role}</span>
-                      </div>
-                      <span className="comm-notice-date">{new Date(notice.createdAt).toLocaleString()}</span>
-                    </div>
-                    <h3 className="comm-notice-title">{notice.title}</h3>
-                    <p className="comm-notice-content">{notice.content}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Teams Section */}
-          <section className="comm-section">
-            <div className="comm-section-header">
-              <h2 className="comm-section-title">
-                <Users color="#a200ff" />
-                Active Teams
-              </h2>
-              {isPlayer && (
-                <button className="comm-btn" onClick={() => setIsTeamModalOpen(true)}>
-                  Create Team
-                </button>
-              )}
-            </div>
-
-            <form className="comm-search-bar" onSubmit={(e) => { e.preventDefault(); handleSearchTeams(teamQuery); }}>
-              <input 
-                type="text" 
-                placeholder="Search for esports teams..." 
-                value={teamQuery}
-                onChange={(e) => { setTeamQuery(e.target.value); handleSearchTeams(e.target.value); }}
-              />
-              <button type="submit"><Search size={20} strokeWidth={1.5} /></button>
-            </form>
-
-            <div className="comm-grid">
-              {teamsLoading ? (
-                <div className="comm-state-msg">Loading teams...</div>
-              ) : teams.length === 0 ? (
-                <div className="comm-state-msg">No teams found.</div>
-              ) : (
-                teams.map(team => (
-                  <Link to={`/player/team/${team._id}`} key={team._id} className="comm-card">
-                    <div className="comm-card-header">
-                      {team.logoUrl ? (
-                         <img src={`http://localhost:5000${team.logoUrl}`} alt="" className="comm-avatar" />
-                      ) : (
-                         <div className="comm-avatar-placeholder"><Users size={24} /></div>
-                      )}
-                      <div className="comm-user-info">
-                        <h3 className="comm-user-name">{team.name}</h3>
-                        <span className="comm-user-role">Captain: {team.captain.fullName}</span>
-                      </div>
-                    </div>
-                    <div className="comm-card-body">
-                      <p>{team.bio || "Building a legacy..."}</p>
-                      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '5px', fontSize: '10px', color: '#94a3b8' }}>
-                         <span style={{ padding: '2px 6px', background: '#1e293b', borderRadius: '4px' }}>{team.members.length} Members</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Player Search Section */}
-          <section className="comm-section">
-            <div className="comm-section-header">
-              <h2 className="comm-section-title">
-                <UserIcon color="#a200ff" />
-                Player Search
-              </h2>
-            </div>
-
-            <form className="comm-search-bar" onSubmit={onSubmitSearch}>
-              <input 
-                type="text" 
-                placeholder="Search for players across Tourney..." 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <button type="submit"><Search size={20} strokeWidth={1.5} /></button>
-            </form>
-
-            {loading ? (
-              <div className="comm-state-msg">Scanning for players...</div>
-            ) : users.length === 0 ? (
-              <div className="comm-state-msg">No players found matching your query.</div>
-            ) : (
-              <div className="comm-grid">
-                {users.map(user => (
-                  <Link to={`/player/profile/${user._id}`} key={user._id} className="comm-card">
-                    <div className="comm-card-header">
-                      {user.avatarUrl ? (
-                        <img src={`http://localhost:5000${user.avatarUrl}`} alt={user.fullName} className="comm-avatar" />
-                      ) : (
-                        <div className="comm-avatar-placeholder"><UserIcon size={24} /></div>
-                      )}
-                      <div className="comm-user-info">
-                        <h3 className="comm-user-name">{user.fullName}</h3>
-                        <span className="comm-user-role">{user.role}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="comm-card-body">
-                      <p>{user.bio || "No description provided. Letting their stats do the talking."}</p>
-                    </div>
-                  </Link>
-                ))}
+        <div className="comm-content-grid">
+          
+          {/* Main Column */}
+          <div className="comm-main-col">
+            {/* Header moved inside main or kept global? I'll keep it global above the content grid */}
+            
+            {/* Notice Board Section */}
+            <section className="comm-section">
+              <div className="comm-section-header">
+                <h2 className="comm-section-title">
+                  <Megaphone color="#a200ff" />
+                  Notice Board
+                </h2>
+                {isOrganizerOrAdmin && (
+                  <button className="comm-btn" onClick={() => setIsModalOpen(true)}>
+                    + Broadcast Notice
+                  </button>
+                )}
               </div>
-            )}
-          </section>
+
+              <div className="comm-notices">
+                {announcements.length === 0 ? (
+                  <div className="comm-state-msg">No notices have been published yet.</div>
+                ) : (
+                  announcements.map((notice) => (
+                    <div className="comm-notice-card" key={notice._id}>
+                      {(currentUser?.id === notice.author?._id || currentUser?.role === "admin") && (
+                        <button className="comm-notice-delete" onClick={() => handleDeleteNotice(notice._id)}>
+                          <Trash2 size={20} />
+                        </button>
+                      )}
+                      <div className="comm-notice-header">
+                        {notice.author?.avatarUrl ? (
+                          <img src={`http://localhost:5000${notice.author.avatarUrl}`} alt="Author" className="comm-notice-avatar" />
+                        ) : (
+                          <UserIcon size={24} color="#64748b" style={{background: '#1e293b', border: '1px solid #334155', borderRadius: '50%', padding: 4}} />
+                        )}
+                        <div>
+                          <span className="comm-notice-author">{notice.author?.fullName || "System"}</span>
+                          <span className="comm-notice-role">{notice.author?.role || "Announcement"}</span>
+                        </div>
+                        <span className="comm-notice-date">{new Date(notice.createdAt).toLocaleString()}</span>
+                      </div>
+                      <h3 className="comm-notice-title">{notice.title}</h3>
+                      <p className="comm-notice-content">{notice.content}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Teams Section */}
+            <section className="comm-section">
+              <div className="comm-section-header">
+                <h2 className="comm-section-title">
+                  <Users color="#a200ff" />
+                  Active Teams
+                </h2>
+                {isPlayer && (
+                  <button className="comm-btn" onClick={() => setIsTeamModalOpen(true)}>
+                    Create Team
+                  </button>
+                )}
+              </div>
+
+              <form className="comm-search-bar" onSubmit={(e) => { e.preventDefault(); handleSearchTeams(teamQuery); }}>
+                <input 
+                  type="text" 
+                  placeholder="Search for esports teams..." 
+                  value={teamQuery}
+                  onChange={(e) => { setTeamQuery(e.target.value); handleSearchTeams(e.target.value); }}
+                />
+                <button type="submit"><Search size={20} strokeWidth={1.5} /></button>
+              </form>
+
+              <div className="comm-teams-list">
+                {teamsLoading ? (
+                  <div className="comm-state-msg">Loading teams...</div>
+                ) : teams.length === 0 ? (
+                  <div className="comm-state-msg">No teams found.</div>
+                ) : (
+                  teams.map(team => (
+                    <Link to={`/player/team/${team._id}`} key={team._id} className="team-row-card">
+                      <div className="team-row-header">
+                        {team.logoUrl ? (
+                           <img src={`http://localhost:5000${team.logoUrl}`} alt="" className="team-avatar-small" />
+                        ) : (
+                           <div className="team-avatar-placeholder"><Users size={20} /></div>
+                        )}
+                        <div className="team-info-mini">
+                          <h4 className="team-name">{team.name}</h4>
+                          <span className="team-captain">Capt: {team.captain?.fullName || "None"}</span>
+                        </div>
+                        <div className="team-meta">
+                           <span>{team.members?.length || 0} Members</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar Column */}
+          <aside className="comm-sidebar">
+            {/* Player Search Section */}
+            <section className="comm-section">
+              <div className="comm-section-header">
+                <h2 className="comm-section-title">
+                  <UserIcon color="#a200ff" size={20} />
+                  Find Players
+                </h2>
+              </div>
+
+              <form className="comm-search-sidebar" onSubmit={onSubmitSearch}>
+                <div className="search-input-wrap">
+                  <Search size={18} className="search-icon" />
+                  <input 
+                    type="text" 
+                    placeholder="Steam-style search..." 
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      if (e.target.value.length > 0) handleSearch(e.target.value);
+                      else setUsers([]);
+                    }}
+                  />
+                </div>
+              </form>
+
+              <div className="search-results">
+                {loading ? (
+                  <div className="comm-state-msg-small">Scanning...</div>
+                ) : query && users.length === 0 ? (
+                  <div className="comm-state-msg-small">No players found.</div>
+                ) : !query ? (
+                  <div className="comm-search-placeholder">
+                    <Users size={40} opacity={0.3} />
+                    <p>Search for friends and rivals <br/> across the platform.</p>
+                  </div>
+                ) : (
+                  <div className="user-results-list">
+                    {users.map(user => (
+                      <Link to={`/player/profile/${user._id}`} key={user._id} className="user-item">
+                        {user.avatarUrl ? (
+                          <img src={`http://localhost:5000${user.avatarUrl}`} alt="" className="user-avatar-tiny" />
+                        ) : (
+                          <div className="user-avatar-tiny-placeholder"><UserIcon size={16} /></div>
+                        )}
+                        <div className="user-item-info">
+                          <span className="user-item-name">{user.fullName}</span>
+                          <span className="user-item-role">{user.role}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </aside>
+
+        </div>
 
         </div>
       </div>

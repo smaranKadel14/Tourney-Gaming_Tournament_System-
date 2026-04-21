@@ -17,23 +17,26 @@ import {
     generateBracket,
     updateBracket,
     checkRegistrationStatus,
+    deleteRegistration,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
+import { bannerUpload } from "../middleware/upload";
 
 const router = express.Router();
 
-router.post("/", protect, authorize("organizer", "admin"), createTournament);
+router.post("/", protect, authorize("organizer", "admin"), bannerUpload.single("banner"), createTournament);
 router.get("/organizer/me", protect, authorize("organizer", "admin"), getOrganizerTournaments);
 router.get("/organizer/players", protect, authorize("organizer", "admin"), getOrganizerPlayers);
 router.get("/organizer/stats", protect, authorize("organizer", "admin"), getOrganizerStats);
 router.get("/", getTournaments);
 router.get("/:id", getTournamentById);
 router.get("/:id/registration-status", protect, checkRegistrationStatus);
-router.put("/:id", protect, authorize("organizer", "admin"), updateTournament);
+router.put("/:id", protect, authorize("organizer", "admin"), bannerUpload.single("banner"), updateTournament);
 router.post("/:id/bracket/generate", protect, authorize("organizer", "admin"), generateBracket);
 router.put("/:id/bracket", protect, authorize("organizer", "admin"), updateBracket);
 router.get("/:id/registrations", protect, authorize("organizer", "admin"), getTournamentRegistrations);
 router.patch("/:id/registrations/:regId", protect, authorize("organizer", "admin"), updateRegistrationStatus);
+router.delete("/:id/registrations/:regId", protect, authorize("organizer", "admin"), deleteRegistration);
 router.post("/:id/register", protect, registerForTournament);
 router.post("/:id/esewa-payment", protect, initiateEsewaPayment);
 router.delete("/:id", protect, authorize("admin", "organizer"), deleteTournament);

@@ -5,6 +5,8 @@ import { Request, Response } from "express";
 import { createNotification } from "./notification.controller";
 import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
+import fs from "fs";
+import path from "path";
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
@@ -126,10 +128,12 @@ export const registerForTournament = async (req: Request, res: Response): Promis
 export const getOrganizerStats = async (req: Request, res: Response): Promise<void> => {
     try {
         const organizerId = (req as any).user?.id;
+        console.log("Fetching stats for organizer:", organizerId);
         
         // 1. Get tournaments owned by organizer
         const tournaments = await Tournament.find({ organizer: organizerId });
         const tournamentIds = tournaments.map(t => t._id);
+        console.log("Found tournaments:", tournaments.length, "IDs:", tournamentIds);
 
         // 2. Aggregate earnings from completed payments
         const completedRegistrations = await Registration.find({
@@ -156,25 +160,42 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
         sixMonthsAgo.setDate(1);
+        console.log("Date range for trends:", sixMonthsAgo, "to", new Date());
+
+        // Debug: Check what registrations actually exist
+        const allRegistrations = await Registration.find({
+            tournament: { $in: tournamentIds }
+        }).select('status registeredAt tournament');
+        console.log("All registrations for organizer:", allRegistrations.length, "registrations");
+        console.log("Registration details:", allRegistrations.map(r => ({
+            status: r.status,
+            registeredAt: r.registeredAt,
+            tournament: r.tournament
+        })));
+
+        console.log("Tournament IDs for query:", tournamentIds);
 
         const trends = await Registration.aggregate([
             {
                 $match: {
                     tournament: { $in: tournamentIds },
-                    createdAt: { $gte: sixMonthsAgo }
+                    status: { $in: ["confirmed", "Active", "enrolled", "Enrolled"] },
+                    registeredAt: { $gte: sixMonthsAgo }
                 }
             },
             {
                 $group: {
                     _id: {
-                        month: { $month: "$createdAt" },
-                        year: { $year: "$createdAt" }
+                        month: { $month: "$registeredAt" },
+                        year: { $year: "$registeredAt" }
                     },
                     count: { $sum: 1 }
                 }
             },
             { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]);
+
+        console.log("Aggregated Trends Data:", trends);
 
         // Format trends for the frontend
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -185,20 +206,25 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
             const month = d.getMonth() + 1;
             const year = d.getFullYear();
             
-            const match = trends.find(t => t._id.month === month && t._id.year === year);
+            const match = trends.find((t: any) => t._id.month === month && t._id.year === year);
             trendData.push({
                 label: monthNames[month - 1],
                 value: match ? match.count : 0
             });
         }
 
-        res.json({
+        console.log("Formatted trendData:", trendData);
+
+        const finalStats = {
             totalEarnings,
             pendingRevenue,
             totalPlayers: await Registration.countDocuments({ tournament: { $in: tournamentIds }, status: "confirmed" }),
             totalTournaments: tournaments.length,
             trendData
-        });
+        };
+
+        console.log("Final stats being sent:", finalStats);
+        res.json(finalStats);
     } catch (error) {
         console.error("Error fetching organizer stats:", error);
         res.status(500).json({ message: "Server error" });
@@ -348,6 +374,39 @@ export const updateRegistrationStatus = async (req: Request, res: Response): Pro
     }
 };
 
+// @desc    Delete a registration
+// @route   DELETE /api/tournaments/:id/registrations/:regId
+// @access  Private (Organizer/Admin)
+export const deleteRegistration = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id: tournamentId, regId } = req.params;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        // Verify authorization
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        const registration = await Registration.findOneAndDelete({ _id: regId, tournament: tournamentId });
+        if (!registration) {
+            res.status(404).json({ message: "Registration not found" });
+            return;
+        }
+
+        res.json({ message: "Registration deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting registration:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 // @desc    Create a new tournament
 // @route   POST /api/tournaments
 // @access  Private (Organizer/Admin)
@@ -361,21 +420,16 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
         }
 
         const {
-            title,
-            game,
-            description,
-            startDate,
-            endDate,
-            location,
-            registrationDeadline,
-            prizePool,
-            rules,
-            maxParticipants,
-            imageUrl,
-            status,
-            registrationFee,
-            teamSize,
+            title, game, description, startDate, endDate,
+            location, registrationDeadline, prizePool,
+            rules, registrationFee, maxParticipants, teamSize,
+            status, imageUrl
         } = req.body;
+
+        let finalImageUrl = imageUrl;
+        if (req.file) {
+            finalImageUrl = `/uploads/banners/${req.file.filename}`;
+        }
 
         const tournament = await Tournament.create({
             title,
@@ -388,10 +442,10 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
             registrationDeadline,
             prizePool: prizePool || "TBA",
             rules: rules || "",
-            registrationFee: registrationFee || 0,
-            maxParticipants: maxParticipants || 0,
-            teamSize: teamSize || 1,
-            imageUrl,
+            registrationFee: Number(registrationFee) || 0,
+            maxParticipants: Number(maxParticipants) || 0,
+            teamSize: Number(teamSize) || 1,
+            imageUrl: finalImageUrl,
             status: status || "upcoming"
         });
 
@@ -421,6 +475,13 @@ export const deleteTournament = async (req: Request, res: Response): Promise<voi
         if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
             res.status(403).json({ message: "Not authorized to delete this tournament" });
             return;
+        }
+
+        if (tournament.imageUrl && tournament.imageUrl.startsWith("/uploads/banners/")) {
+            const filePath = path.join(__dirname, "../../", tournament.imageUrl);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
 
         await Tournament.findByIdAndDelete(tournamentId);
@@ -475,6 +536,22 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
             }
         });
 
+        // Handle new banner file upload
+        if (req.file) {
+            // Delete old file if it exists and is a local upload
+            if (tournament.imageUrl && tournament.imageUrl.startsWith("/uploads/banners/")) {
+                const oldPath = path.join(__dirname, "../../", tournament.imageUrl);
+                if (fs.existsSync(oldPath)) {
+                    try {
+                        fs.unlinkSync(oldPath);
+                    } catch (err) {
+                        console.error("Error deleting old banner:", err);
+                    }
+                }
+            }
+            tournament.imageUrl = `/uploads/banners/${req.file.filename}`;
+        }
+
         const updated = await tournament.save();
         console.log("Update success. DB state teamSize:", updated.teamSize);
         res.json(updated);
@@ -505,7 +582,13 @@ export const getTournamentRegistrations = async (req: Request, res: Response): P
 
         const registrations = await Registration.find({ tournament: tournamentId })
             .populate("user", "fullName email avatarUrl")
-            .populate("team", "name logoUrl")
+            .populate({
+                path: "team",
+                populate: {
+                    path: "members",
+                    select: "fullName email avatarUrl role"
+                }
+            })
             .sort({ createdAt: -1 });
 
         res.json(registrations);

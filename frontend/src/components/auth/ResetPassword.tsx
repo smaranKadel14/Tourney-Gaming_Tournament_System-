@@ -53,16 +53,7 @@ const ResetPassword = () => {
       <div className="auth-page">
         <div className="auth-card" style={{ width: 420 }}>
           <h2>Password Reset Successful</h2>
-          <div style={{ 
-            background: 'rgba(34, 197, 94, 0.12)', 
-            border: '1px solid rgba(34, 197, 94, 0.25)', 
-            color: '#86efac', 
-            padding: '16px', 
-            borderRadius: '10px', 
-            fontSize: '14px', 
-            margin: '20px 0',
-            textAlign: 'center'
-          }}>
+          <div className="auth-success">
             Your password has been successfully reset. Redirecting to login...
           </div>
         </div>

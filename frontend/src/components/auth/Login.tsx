@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import "./Auth.css";
 import { api } from "../../lib/api";
 import { saveAuth, roleHomePath } from "../../utils/auth";
@@ -17,6 +17,8 @@ type LoginResponse = {
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
   // I am keeping state for email/password input
   const [email, setEmail] = useState("");
@@ -90,6 +92,12 @@ const Login = () => {
         <h2>Welcome Back, Gamer</h2>
         <p className="subtitle">Sign in to access your dashboard</p>
 
+        {successMessage && (
+          <div className="auth-success" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <CheckCircle size={16} />
+            {successMessage}
+          </div>
+        )}
         {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
