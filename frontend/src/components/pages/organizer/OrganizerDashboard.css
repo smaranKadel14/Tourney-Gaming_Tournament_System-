@@ -550,3 +550,19 @@
     min-width: 180px;
   }
 }
+
+.od__searchLimit {
+  position: absolute;
+  bottom: -18px;
+  right: 0;
+  font-size: 10px;
+  color: #ff3e3e;
+  font-weight: 700;
+  text-transform: uppercase;
+  animation: odFadeIn 0.2s ease-out;
+}
+
+@keyframes odFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}

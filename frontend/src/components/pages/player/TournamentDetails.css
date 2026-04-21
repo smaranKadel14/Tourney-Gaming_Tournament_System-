@@ -34,10 +34,16 @@
 
 .td-wrap {
     position: relative;
-    z-index: 10; /* Ensures content is above the overlay */
+    z-index: 10;
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .td-wrap {
+        padding: 1rem;
+    }
 }
 
 
@@ -131,6 +137,18 @@
     letter-spacing: 1px;
 }
 
+@media (max-width: 768px) {
+    .td-banner {
+        height: 220px;
+    }
+    .td-banner-overlay {
+        padding: 1.5rem;
+    }
+    .td-title {
+        font-size: 1.8rem;
+    }
+}
+
 .td-game {
     font-size: 1.1rem;
     color: #ccc;
@@ -139,6 +157,15 @@
 
 .td-body {
     padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .td-body {
+        padding: 1.5rem;
+    }
+    .td-section {
+        margin-bottom: 1.5rem;
+    }
 }
 
 .td-section {
@@ -267,4 +294,28 @@
     background: rgba(255, 68, 68, 0.1);
     border: 1px solid #ff4444;
     color: #ff4444;
+}
+
+/* Modal Responsiveness */
+.comm-modal {
+    width: 95%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+    .comm-modal {
+        padding: 1.5rem;
+    }
+    .comm-modal h2 {
+        font-size: 1.25rem;
+    }
+    .comm-modal-actions {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .comm-modal-actions button {
+        width: 100%;
+    }
 }

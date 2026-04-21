@@ -41,6 +41,26 @@ type Tournament = {
   imageUrl?: string;
 };
 
+const TournamentSkeleton = () => {
+  return (
+    <div className="pt-feed-grid">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="pt-card-skeleton">
+          <div className="skeleton-hero skeleton-shimmer"></div>
+          <div className="skeleton-content">
+            <div className="skeleton-meta skeleton-shimmer"></div>
+            <div className="skeleton-title skeleton-shimmer"></div>
+            <div className="skeleton-box-row">
+              <div className="skeleton-box skeleton-shimmer"></div>
+              <div className="skeleton-box skeleton-shimmer"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function Tournaments() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [myHistoryIds, setMyHistoryIds] = useState<string[]>([]);
@@ -52,6 +72,7 @@ export default function Tournaments() {
   const [showFreeOnly, setShowFreeOnly] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('All Status');
   const [isGenreOpen, setIsGenreOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
 
 
@@ -137,9 +158,15 @@ export default function Tournaments() {
       <div className="pt-wrap">
         <PlayerNavbar />
 
+        <div className="pt-mobile-filter-toggle">
+          <button onClick={() => setShowFilters(!showFilters)}>
+            <i className="fas fa-filter"></i> {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+        </div>
+
         <div className="pt-layout">
           {/* LEFT SIDEBAR */}
-          <aside className="pt-sidebar">
+          <aside className={`pt-sidebar ${showFilters ? 'show' : ''}`}>
             <div className="pt-filters">
               <h3 className="pt-filter-heading">FILTERS</h3>
 
@@ -252,7 +279,7 @@ export default function Tournaments() {
             </header>
 
             {loading ? (
-              <div className="pt-loading">Loading tournaments data...</div>
+              <TournamentSkeleton />
             ) : filteredTournaments.length === 0 ? (
               <div className="pt-loading">No active tournaments available for these filters. Check back soon!</div>
             ) : (
