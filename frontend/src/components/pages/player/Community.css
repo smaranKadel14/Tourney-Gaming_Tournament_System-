@@ -354,31 +354,48 @@
 
 .comm-search-bar {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .comm-search-bar input {
-  flex: 1;
+  flex: 1; /* This makes the input expand */
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 12px 18px;
+  border-radius: 10px;
   color: #fff;
   outline: none;
+  font-size: 0.95rem;
+  transition: all 0.2s;
 }
 
 .comm-search-bar input:focus {
   border-color: #a200ff;
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 0 2px rgba(162, 0, 255, 0.2);
 }
 
 .comm-search-bar button {
-  background: #1e293b;
+  flex: 0 0 auto; /* This prevents the button from growing */
+  background: var(--bg-panel, #1e293b);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
-  padding: 0 16px;
-  border-radius: 8px;
+  width: 50px; /* Fixed small width for the button */
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comm-search-bar button:hover {
+  background: #2d3748;
+  border-color: rgba(162, 0, 255, 0.5);
+  color: #a200ff;
 }
 
 .comm-state-msg { color: #64748b; padding: 40px; text-align: center; font-style: italic; }

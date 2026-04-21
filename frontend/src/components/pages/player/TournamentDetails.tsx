@@ -107,34 +107,44 @@ export default function TournamentDetails() {
 
   useEffect(() => {
     const fetchTournamentAndStatus = async () => {
+      setLoading(true);
+      setError("");
+      
       try {
+        // 1. Fetch Primary Tournament Data (MANDATORY)
         const response = await api.get(`/tournaments/${id}`);
         setTournament(response.data);
 
-        // If user is logged in, check their registration status
+        // 2. Fetch Secondary User-Specific Data (OPTIONAL - Don't fail the whole page)
         const token = getToken();
         const user = getAuthUser();
-        if (token) {
-           const regRes = await api.get(`/tournaments/${id}/registration-status`, {
-               headers: { Authorization: `Bearer ${token}` }
-           });
-           if (regRes.data && regRes.data.isRegistered) {
-               setIsRegistered(true);
-           }
+        
+        if (token && response.data) {
+          try {
+             // Check registration status
+             const regRes = await api.get(`/tournaments/${id}/registration-status`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+             if (regRes.data && regRes.data.isRegistered) {
+                 setIsRegistered(true);
+             }
 
-           // Fetch user teams if this is a team tournament
-           if (response.data.teamSize > 1) {
-              const teamsRes = await api.get('/teams', {
-                  headers: { Authorization: `Bearer ${token}` }
-              });
-              // Filter teams where user is captain
-              const captained = teamsRes.data.filter((t: any) => t.captain._id === user?.id);
-              setUserTeams(captained);
-           }
+             // Fetch user teams if this is a team tournament
+             if (response.data.teamSize > 1) {
+                const teamsRes = await api.get('/teams', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const captained = teamsRes.data.filter((t: any) => t.captain?._id === user?.id);
+                setUserTeams(captained);
+             }
+          } catch (secondaryErr) {
+             console.warn("Could not load registration/team status:", secondaryErr);
+             // We don't set global error here because the tournament loaded
+          }
         }
       } catch (err: any) {
         console.error("Error fetching tournament:", err);
-        setError("Failed to load tournament details.");
+        setError("Failed to load tournament details correctly.");
       } finally {
         setLoading(false);
       }

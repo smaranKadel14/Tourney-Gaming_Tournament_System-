@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./TournamentManager.css";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
@@ -38,6 +38,13 @@ interface Registration {
     _id: string;
     name: string;
     logoUrl?: string;
+    members?: Array<{
+        _id: string;
+        fullName: string;
+        email: string;
+        avatarUrl?: string;
+        role: string;
+    }>;
   };
 }
 
@@ -261,11 +268,19 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
   // --- Participants tab state ---
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loadingRegs, setLoadingRegs] = useState(false);
+  const [expandedRegs, setExpandedRegs] = useState<Set<string>>(new Set());
 
   // --- Danger zone state ---
   const [deleting, setDeleting] = useState(false);
 
   const token = getToken();
+
+  const toggleExpand = (id: string) => {
+    const newExpanded = new Set(expandedRegs);
+    if (newExpanded.has(id)) newExpanded.delete(id);
+    else newExpanded.add(id);
+    setExpandedRegs(newExpanded);
+  };
 
   useEffect(() => {
     if (activeTab === "participants" || activeTab === "bracket") {
@@ -413,6 +428,28 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDeleteRegistration = async (regId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove "${name}" from this tournament?`)) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/tournaments/${tournament.id}/registrations/${regId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const data = await res.json().catch(() => ({ message: "Server returned non-JSON response" }));
+
+      if (res.ok) {
+        setRegistrations(prev => prev.filter(r => r._id !== regId));
+      } else {
+        alert(data.message || `Error ${res.status}: Failed to delete registration`);
+      }
+    } catch (err: any) {
+      console.error("Delete Reg Error:", err);
+      alert(`Network error: ${err.message || "Could not connect to server"}`);
     }
   };
 
@@ -673,42 +710,88 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
                     <th>REGISTERED</th>
                     <th>STATUS</th>
                     <th>PAYMENT</th>
+                    <th style={{ textAlign: 'right' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {registrations.map(r => (
-                    <tr key={r._id}>
-                      <td>
-                        <div className="tm-player-cell">
-                          <div className="tm-player-avatar">
-                            {r.team?.logoUrl 
-                              ? <img src={`http://localhost:5000${r.team.logoUrl}`} alt="" />
-                              : r.user?.avatarUrl
-                                ? <img src={`http://localhost:5000${r.user.avatarUrl}`} alt="" />
-                                : <span>{(r.team?.name || r.user?.fullName || "?").charAt(0)}</span>
-                            }
+                    <React.Fragment key={r._id}>
+                      <tr className={expandedRegs.has(r._id) ? "tm-row--expanded" : ""}>
+                        <td>
+                          <div className="tm-player-cell">
+                            <div className="tm-player-avatar tm-player-avatar--team">
+                              {r.team?.logoUrl 
+                                ? <img src={`http://localhost:5000${r.team.logoUrl}`} alt="" />
+                                : <span>{(r.team?.name || "?").charAt(0)}</span>
+                              }
+                            </div>
+                            <div className="tm-team-info">
+                               <span className="tm-player-name">{r.team?.name || "Independent Player"}</span>
+                               <span className="tm-team-captain">Captain: {r.user?.fullName}</span>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                             <span className="tm-player-name">{r.user?.fullName ?? "Unknown"}</span>
-                             {r.team && <span style={{ fontSize: '10px', color: '#a200ff', fontWeight: 600 }}>Team: {r.team.name}</span>}
+                        </td>
+                        <td className="tm-muted">{r.user?.email}</td>
+                        <td className="tm-muted">
+                          {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                        </td>
+                        <td>
+                          <span className={`tm-badge tm-badge--${r.status}`}>
+                            {regStatusIcon(r.status)} {r.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`tm-badge tm-badge--${r.paymentStatus}`}>
+                            {r.paymentStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="tm-reg-actions">
+                            <button 
+                              className={`tm-reg-action-btn ${expandedRegs.has(r._id) ? "tm-reg-action-btn--active" : ""}`}
+                              onClick={() => toggleExpand(r._id)}
+                              title="View Roster"
+                            >
+                              {expandedRegs.has(r._id) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            <button 
+                              className="tm-reg-action-btn tm-reg-action-btn--delete"
+                              title="Remove Team"
+                              onClick={() => handleDeleteRegistration(r._id, r.team?.name || r.user?.fullName || "Participant")}
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                        </div>
-                      </td>
-                      <td className="tm-muted">{r.user?.email}</td>
-                      <td className="tm-muted">
-                        {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
-                      </td>
-                      <td>
-                        <span className={`tm-badge tm-badge--${r.status}`}>
-                          {regStatusIcon(r.status)} {r.status}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`tm-badge tm-badge--${r.paymentStatus}`}>
-                          {r.paymentStatus}
-                        </span>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                      {/* Roster Drawer */}
+                      {expandedRegs.has(r._id) && (
+                        <tr className="tm-roster-row">
+                          <td colSpan={6}>
+                            <div className="tm-roster-drawer animate-slide-down">
+                               <div className="tm-roster-header">Team Roster</div>
+                               <div className="tm-roster-grid">
+                                  {r.team?.members?.map(member => (
+                                    <div key={member._id} className="tm-roster-item">
+                                       <div className="tm-member-avatar">
+                                          {member.avatarUrl 
+                                            ? <img src={`http://localhost:5000${member.avatarUrl}`} alt="" />
+                                            : <span>{member.fullName.charAt(0)}</span>
+                                          }
+                                       </div>
+                                       <div className="tm-member-info">
+                                          <div className="tm-member-name">{member.fullName}</div>
+                                          <div className="tm-member-email">{member.email}</div>
+                                       </div>
+                                       {member._id === r.user?._id && <span className="tm-captain-tag">Captain</span>}
+                                    </div>
+                                  )) || <div className="tm-muted">No members listed.</div>}
+                               </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

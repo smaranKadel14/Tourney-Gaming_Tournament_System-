@@ -374,6 +374,39 @@ export const updateRegistrationStatus = async (req: Request, res: Response): Pro
     }
 };
 
+// @desc    Delete a registration
+// @route   DELETE /api/tournaments/:id/registrations/:regId
+// @access  Private (Organizer/Admin)
+export const deleteRegistration = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id: tournamentId, regId } = req.params;
+        const user = (req as any).user;
+
+        const tournament = await Tournament.findById(tournamentId);
+        if (!tournament) {
+            res.status(404).json({ message: "Tournament not found" });
+            return;
+        }
+
+        // Verify authorization
+        if (user.role === "organizer" && tournament.organizer.toString() !== user.id) {
+            res.status(403).json({ message: "Not authorized" });
+            return;
+        }
+
+        const registration = await Registration.findOneAndDelete({ _id: regId, tournament: tournamentId });
+        if (!registration) {
+            res.status(404).json({ message: "Registration not found" });
+            return;
+        }
+
+        res.json({ message: "Registration deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting registration:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 // @desc    Create a new tournament
 // @route   POST /api/tournaments
 // @access  Private (Organizer/Admin)
@@ -549,7 +582,13 @@ export const getTournamentRegistrations = async (req: Request, res: Response): P
 
         const registrations = await Registration.find({ tournament: tournamentId })
             .populate("user", "fullName email avatarUrl")
-            .populate("team", "name logoUrl")
+            .populate({
+                path: "team",
+                populate: {
+                    path: "members",
+                    select: "fullName email avatarUrl role"
+                }
+            })
             .sort({ createdAt: -1 });
 
         res.json(registrations);

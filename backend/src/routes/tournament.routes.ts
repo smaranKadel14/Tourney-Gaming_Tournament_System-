@@ -17,6 +17,7 @@ import {
     generateBracket,
     updateBracket,
     checkRegistrationStatus,
+    deleteRegistration,
 } from "../controllers/tournament.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 import { bannerUpload } from "../middleware/upload";
@@ -35,6 +36,7 @@ router.post("/:id/bracket/generate", protect, authorize("organizer", "admin"), g
 router.put("/:id/bracket", protect, authorize("organizer", "admin"), updateBracket);
 router.get("/:id/registrations", protect, authorize("organizer", "admin"), getTournamentRegistrations);
 router.patch("/:id/registrations/:regId", protect, authorize("organizer", "admin"), updateRegistrationStatus);
+router.delete("/:id/registrations/:regId", protect, authorize("organizer", "admin"), deleteRegistration);
 router.post("/:id/register", protect, registerForTournament);
 router.post("/:id/esewa-payment", protect, initiateEsewaPayment);
 router.delete("/:id", protect, authorize("admin", "organizer"), deleteTournament);

@@ -203,20 +203,20 @@ export default function Community() {
                 ) : (
                   announcements.map((notice) => (
                     <div className="comm-notice-card" key={notice._id}>
-                      {(currentUser?.id === notice.author._id || currentUser?.role === "admin") && (
+                      {(currentUser?.id === notice.author?._id || currentUser?.role === "admin") && (
                         <button className="comm-notice-delete" onClick={() => handleDeleteNotice(notice._id)}>
                           <Trash2 size={20} />
                         </button>
                       )}
                       <div className="comm-notice-header">
-                        {notice.author.avatarUrl ? (
+                        {notice.author?.avatarUrl ? (
                           <img src={`http://localhost:5000${notice.author.avatarUrl}`} alt="Author" className="comm-notice-avatar" />
                         ) : (
                           <UserIcon size={24} color="#64748b" style={{background: '#1e293b', border: '1px solid #334155', borderRadius: '50%', padding: 4}} />
                         )}
                         <div>
-                          <span className="comm-notice-author">{notice.author.fullName}</span>
-                          <span className="comm-notice-role">{notice.author.role}</span>
+                          <span className="comm-notice-author">{notice.author?.fullName || "System"}</span>
+                          <span className="comm-notice-role">{notice.author?.role || "Announcement"}</span>
                         </div>
                         <span className="comm-notice-date">{new Date(notice.createdAt).toLocaleString()}</span>
                       </div>
@@ -268,10 +268,10 @@ export default function Community() {
                         )}
                         <div className="team-info-mini">
                           <h4 className="team-name">{team.name}</h4>
-                          <span className="team-captain">Capt: {team.captain.fullName}</span>
+                          <span className="team-captain">Capt: {team.captain?.fullName || "None"}</span>
                         </div>
                         <div className="team-meta">
-                           <span>{team.members.length} Members</span>
+                           <span>{team.members?.length || 0} Members</span>
                         </div>
                       </div>
                     </Link>
