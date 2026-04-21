@@ -91,3 +91,24 @@
   color: #fff;
   transform: translateY(-1px);
 }
+
+/* NAVBAR RESPONSIVENESS */
+@media (max-width: 768px) {
+  .ph__nav {
+    height: auto;
+    flex-direction: column;
+    padding: 1rem 0;
+    gap: 1rem;
+  }
+  .ph__logo {
+    font-size: 1.5rem;
+  }
+  .ph__links {
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ph__links a {
+    font-size: 13px;
+  }
+}

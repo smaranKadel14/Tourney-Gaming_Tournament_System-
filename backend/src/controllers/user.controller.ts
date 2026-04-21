@@ -106,13 +106,26 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     }
 };
 
+// Helper to escape regex special characters for safe search
+const escapeRegex = (text: string) => {
+    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+};
+
 export const searchUsers = async (req: Request, res: Response) => {
     try {
         const { q } = req.query;
         let query: any = { role: { $ne: "admin" } }; // Keep admin accounts private
         
         if (q && typeof q === 'string' && q.trim() !== '') {
-            query.fullName = { $regex: q.trim(), $options: "i" };
+            const searchTerm = q.trim();
+            // Safeguard: Limit length to 50 characters to prevent ReDoS/Performance issues
+            if (searchTerm.length > 50) {
+                return res.status(400).json({ message: "Search query too long. Max 50 characters." });
+            }
+            
+            // Safeguard: Escape regex characters to prevent malicious regex injection
+            const safeSearch = escapeRegex(searchTerm);
+            query.fullName = { $regex: safeSearch, $options: "i" };
         }
 
         const users = await User.find(query)

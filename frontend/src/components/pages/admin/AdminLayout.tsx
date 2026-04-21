@@ -85,12 +85,18 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
             {onSearch && (
               <div className="admin-search-wrap">
                 <Search className="admin-search-ic" size={16} />
-                <input
-                  value={search || ''}
-                  onChange={(e) => onSearch(e.target.value)}
-                  className="admin-search-input"
-                  placeholder="Search..."
-                />
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <input
+                    value={search || ''}
+                    onChange={(e) => onSearch(e.target.value)}
+                    className="admin-search-input"
+                    maxLength={50}
+                    placeholder="Search..."
+                  />
+                  {search && search.length >= 50 && (
+                    <span className="admin-search-limit">Limit reached (50/50)</span>
+                  )}
+                </div>
               </div>
             )}
             {showInvite && (

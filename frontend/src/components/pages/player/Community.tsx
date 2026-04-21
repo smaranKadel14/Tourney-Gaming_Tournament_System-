@@ -67,6 +67,28 @@ export default function Community() {
     handleSearchTeams("");
   }, []);
 
+  // Debounced Player Search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query.trim()) {
+        handleSearch(query.trim());
+      } else {
+        setUsers([]);
+      }
+    }, 400); // 400ms debounce
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Debounced Team Search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSearchTeams(teamQuery.trim());
+    }, 400); // 400ms debounce
+
+    return () => clearTimeout(timer);
+  }, [teamQuery]);
+
   const fetchAnnouncements = async () => {
     try {
       const res = await api.get("/announcements");
@@ -243,12 +265,18 @@ export default function Community() {
               </div>
 
               <form className="comm-search-bar" onSubmit={(e) => { e.preventDefault(); handleSearchTeams(teamQuery); }}>
-                <input 
-                  type="text" 
-                  placeholder="Search for esports teams..." 
-                  value={teamQuery}
-                  onChange={(e) => { setTeamQuery(e.target.value); handleSearchTeams(e.target.value); }}
-                />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Search for esports teams..." 
+                    value={teamQuery}
+                    maxLength={50}
+                    onChange={(e) => setTeamQuery(e.target.value)}
+                  />
+                  {teamQuery.length >= 50 && (
+                    <span className="search-limit-hint">Character limit reached (50/50)</span>
+                  )}
+                </div>
                 <button type="submit"><Search size={20} strokeWidth={1.5} /></button>
               </form>
 
@@ -299,12 +327,12 @@ export default function Community() {
                     type="text" 
                     placeholder="Steam-style search..." 
                     value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      if (e.target.value.length > 0) handleSearch(e.target.value);
-                      else setUsers([]);
-                    }}
+                    maxLength={50}
+                    onChange={(e) => setQuery(e.target.value)}
                   />
+                  {query.length >= 50 && (
+                    <span className="search-limit-hint-sidebar">Limit reached (50/50)</span>
+                  )}
                 </div>
               </form>
 

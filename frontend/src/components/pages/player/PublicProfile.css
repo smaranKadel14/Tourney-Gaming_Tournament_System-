@@ -153,6 +153,12 @@
   color: #ffffff;
 }
 
+@media (max-width: 768px) {
+  .pubprof-name {
+    font-size: 28px;
+  }
+}
+
 .pubprof-badges {
   display: flex;
   gap: 12px;
@@ -529,10 +535,39 @@
 @media (max-width: 768px) {
   .pubprof-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+    gap: 20px;
+  }
+  .pubprof-avatar {
+    width: 120px;
+    height: 120px;
+  }
+  .pubprof-name-row {
+    justify-content: center;
+  }
+  .pubprof-meta {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .pubprof-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .pubprof-actions button {
+    width: 100%;
+    justify-content: center;
   }
   .pubprof-stats-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .pubprof-stats-row {
+    grid-template-columns: 1fr;
   }
 }
 
