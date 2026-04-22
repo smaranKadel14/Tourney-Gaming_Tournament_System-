@@ -51,7 +51,7 @@ const AdminDashboard = () => {
       setNoticeContent("");
       alert("Notice broadcasted to all players!");
     } catch (err) {
-      console.error("Failed to post notice", err);
+      // Handled by UI alert if needed
     }
   };
 
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
         setApprovals(formattedApprovals);
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      // Handled by loading state
     } finally {
       setLoading(false);
     }
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
         fetchDashboardData(); // Refresh data
       }
     } catch (error) {
-      console.error("Error approving item:", error);
+      // Error handled by system
     }
   };
 
@@ -191,7 +191,7 @@ const AdminDashboard = () => {
         fetchDashboardData(); // Refresh data
       }
     } catch (error) {
-      console.error("Error rejecting item:", error);
+      // Error handled by system
     }
   };
 

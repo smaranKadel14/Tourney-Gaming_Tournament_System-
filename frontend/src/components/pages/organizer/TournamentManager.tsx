@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, X, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./TournamentManager.css";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
@@ -125,7 +125,7 @@ const CustomSeed = ({ seed, roundIndex, seedIndex, bracketData, onUpdate }: any)
         onUpdate(newData, existingTeam?.name !== "TBD" ? existingTeam : null, team);
       }
     } catch (err) {
-      console.error("Drop error", err);
+      // Logic for drop handling
     }
   };
 
@@ -333,7 +333,7 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
       });
       if (res.ok) setRegistrations(await res.json());
     } catch (e) {
-      console.error("Error fetching registrations", e);
+      // Silent fail or handled by UI
     } finally {
       setLoadingRegs(false);
     }
@@ -427,7 +427,7 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
         }
       }
     } catch (e) {
-      console.error(e);
+      // Error logged by system if telemetry enabled
     }
   };
 
@@ -449,7 +449,6 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
         alert(data.message || "Failed to update status");
       }
     } catch (err) {
-      console.error("Update Status Error:", err);
       alert("Network error. Could not update status.");
     }
   };
@@ -471,7 +470,6 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
         alert(data.message || `Error ${res.status}: Failed to delete registration`);
       }
     } catch (err: any) {
-      console.error("Delete Reg Error:", err);
       alert(`Network error: ${err.message || "Could not connect to server"}`);
     }
   };

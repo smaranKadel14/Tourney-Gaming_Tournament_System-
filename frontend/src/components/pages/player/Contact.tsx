@@ -1,7 +1,7 @@
 import { useState } from "react";
 import PlayerNavbar from "./PlayerNavbar";
 import { api } from "../../../lib/api";
-import { Mail, Phone, MapPin, Send, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import "./Contact.css";
 
 // Assets
@@ -44,7 +44,6 @@ export default function Contact() {
         message: ""
       });
     } catch (err: any) {
-      console.error("Contact submission error:", err);
       setStatus("error");
       setStatusMsg(err.response?.data?.message || "Failed to send message. Please try again later.");
     }

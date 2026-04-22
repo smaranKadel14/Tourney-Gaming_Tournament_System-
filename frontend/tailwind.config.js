@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: ["class"],
-    content: ["./src/**/*.{html,js}"],
+    content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
   	extend: {
   		borderRadius: {
@@ -49,9 +49,29 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
-  		}
+  			},
+        // Organizer theme variables
+        'tm-bg-main': 'var(--bg-main)',
+        'tm-bg-sidebar': 'var(--bg-sidebar)',
+        'tm-bg-panel': 'var(--bg-panel)',
+        'tm-bg-card': 'var(--bg-card)',
+        'tm-text-primary': 'var(--text-primary)',
+        'tm-text-secondary': 'var(--text-secondary)',
+        'tm-accent': 'var(--accent-primary)',
+  		},
+      animation: {
+        'fade-in': 'fade-in 0.3s ease-out',
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
+      }
   	}
   },
   plugins: [require("tailwindcss-animate")],
+  corePlugins: {
+    preflight: false, // Disabling preflight to avoid changing existing UI/designs
+  }
 }

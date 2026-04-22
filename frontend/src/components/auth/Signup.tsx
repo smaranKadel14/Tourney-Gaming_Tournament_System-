@@ -66,7 +66,7 @@ const Signup = () => {
     try {
       setLoading(true);
 
-      const res = await api.post<RegisterResponse>("/auth/register", {
+      await api.post<RegisterResponse>("/auth/register", {
         fullName: name,
         email,
         password,

@@ -378,13 +378,6 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
 
         const imageUrl = req.file ? `/uploads/banners/${req.file.filename}` : req.body.imageUrl;
 
-        // Log for debugging
-        console.log("Creating tournament with data:", {
-            title,
-            game,
-            organizer: organizerId,
-            imageUrl
-        });
 
         const tournament = await Tournament.create({
             title,
@@ -464,8 +457,6 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        console.log("Updating tournament ID:", tournamentId);
-        console.log("Incoming body:", JSON.stringify(req.body, null, 2));
 
         if (req.file) {
             tournament.imageUrl = `/uploads/banners/${req.file.filename}`;
@@ -484,16 +475,13 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
                    value = Number(value);
                    tournament.set("teamSize", value);
                    tournament.markModified("teamSize");
-                   console.log(`Explicitly set teamSize to: ${value}`);
                 } else {
                    (tournament as any).set(field, value);
                 }
-                console.log(`Updating field: ${field} =`, value);
             }
         });
 
         const updated = await tournament.save();
-        console.log("Update success. DB state teamSize:", updated.teamSize);
         res.json(updated);
     } catch (error: any) {
         console.error("CRITICAL ERROR UPDATING TOURNAMENT:", error);

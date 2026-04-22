@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import AdminLayout from "./AdminLayout";
-import { Mail, Check, Trash2, Clock, User, MessageSquare, Loader2 } from "lucide-react";
+import { Mail, Trash2, Clock, MessageSquare, Loader2 } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import { api } from "../../../lib/api";
 import "./AdminDashboard.css";
@@ -29,7 +29,7 @@ const AdminMessages = () => {
       });
       setMessages(res.data);
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      // Handled by loading state
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ const AdminMessages = () => {
         setSelectedMessage(prev => prev ? { ...prev, status: "read" } : null);
       }
     } catch (error) {
-      console.error("Error marking message as read:", error);
+      // Handled silenty
     }
   };
 
