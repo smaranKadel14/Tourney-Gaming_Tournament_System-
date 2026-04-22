@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Edit3, Users, AlertTriangle, Save, Trash2, Loader2, CheckCircle, XCircle, Clock, GitBranch, Zap, Layout, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import "./TournamentManager.css";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
@@ -362,8 +362,8 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
 
   const handleInitializeManualBracket = () => {
     const confirmedCount = registrations.filter(r => r.status === "confirmed").length;
-    if (confirmedCount < 2) {
-      setBracketError("At least 2 confirmed participants are required.");
+    if (confirmedCount < 4) {
+      setBracketError("At least 4 confirmed participants are required.");
       return;
     }
 
@@ -428,6 +428,29 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleUpdateStatus = async (regId: string, status: "confirmed" | "rejected") => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/tournaments/${tournament.id}/registrations/${regId}`, {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ status })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setRegistrations(prev => prev.map(r => r._id === regId ? { ...r, status } : r));
+      } else {
+        alert(data.message || "Failed to update status");
+      }
+    } catch (err) {
+      console.error("Update Status Error:", err);
+      alert("Network error. Could not update status.");
     }
   };
 
@@ -747,6 +770,24 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
                         </td>
                         <td>
                           <div className="tm-reg-actions">
+                            {r.status === "pending" && (
+                              <>
+                                <button 
+                                  className="tm-reg-action-btn tm-reg-action-btn--approve"
+                                  title="Approve registration"
+                                  onClick={() => handleUpdateStatus(r._id, "confirmed")}
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button 
+                                  className="tm-reg-action-btn tm-reg-action-btn--reject"
+                                  title="Reject registration"
+                                  onClick={() => handleUpdateStatus(r._id, "rejected")}
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            )}
                             <button 
                               className={`tm-reg-action-btn ${expandedRegs.has(r._id) ? "tm-reg-action-btn--active" : ""}`}
                               onClick={() => toggleExpand(r._id)}
@@ -874,8 +915,7 @@ const TournamentManager = ({ tournament, onBack, onDeleted, onUpdate }: Props) =
                             onClick={() => {
                                 if (window.confirm("Are you sure you want to reset the bracket? This will wipe all current match data.")) {
                                     setBracketData(null);
-                                    // Optionally call API to clear bracket in DB? 
-                                    // handleUpdateBracket(null) or similar.
+                                    handleUpdateBracket([]); // Clear in DB too
                                 }
                             }}
                         >
