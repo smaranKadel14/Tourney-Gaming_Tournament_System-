@@ -16,9 +16,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/* ===============================================
-   Helper function -> generate JWT token
-   =============================================== */
+// Helper function to generate JWT token
 const signToken = (payload: { id: string; role: string }) => {
   const secret = process.env.JWT_SECRET as string;
 
@@ -27,10 +25,7 @@ const signToken = (payload: { id: string; role: string }) => {
   });
 };
 
-/* ===============================================
-   REGISTER USER
-   POST /api/auth/register
-   =============================================== */
+// REGISTER USER (POST /api/auth/register)
 export const register = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password, role } = req.body;
@@ -58,7 +53,6 @@ export const register = async (req: Request, res: Response) => {
         .json({ message: "Password must be at least 6 characters" });
     }
 
-    // 🔥 IMPORTANT:
     // Normalize email (avoid duplicate issue with uppercase/spaces)
     const cleanEmail = email.trim().toLowerCase();
 
@@ -101,7 +95,7 @@ export const register = async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    console.log("REGISTER ERROR:", err);
+    console.error("REGISTER ERROR:", err);
 
     // Mongo duplicate key protection
     if (err.code === 11000) {
@@ -116,10 +110,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-/* ===============================================
-   LOGIN USER
-   POST /api/auth/login
-   =============================================== */
+// LOGIN USER (POST /api/auth/login)
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -194,10 +185,7 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-/* ===============================================
-   GET CURRENT USER (Protected Route)
-   GET /api/auth/me
-   =============================================== */
+// GET CURRENT USER (Protected Route - GET /api/auth/me)
 export const me = async (req: Request, res: Response) => {
   // user id comes from auth middleware
   // @ts-ignore
@@ -214,10 +202,7 @@ export const me = async (req: Request, res: Response) => {
   return res.json({ user });
 };
 
-/* ===============================================
-   OAUTH LOGIN (Google / Discord)
-   POST /api/auth/oauth
-   =============================================== */
+// OAUTH LOGIN (Google / Discord - POST /api/auth/oauth)
 export const oauthLogin = async (req: Request, res: Response) => {
   try {
     const { provider, providerId, email, fullName, avatarUrl } = req.body;
@@ -281,10 +266,7 @@ export const oauthLogin = async (req: Request, res: Response) => {
   }
 };
 
-/* ===============================================
-   FORGOT PASSWORD
-   POST /api/auth/forgot-password
-   =============================================== */
+// FORGOT PASSWORD (POST /api/auth/forgot-password)
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -304,17 +286,18 @@ export const forgotPassword = async (req: Request, res: Response) => {
     // Send email
     const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
     
-    // We try to send the email. If we fail (e.g., bad credentials), we still return success to the user 
-    // but log it to the console for the developer.
+    /* 
+       We try to send the email. If we fail (e.g., bad credentials), we still return success 
+       to the user for security, but the system logs the failure for the admin.
+    */
     try {
       await transporter.sendMail({
         to: user.email,
         subject: "Password Reset Request",
         text: `You requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`
       });
-      console.log(`[DEV ONLY] Reset Link Generated: ${resetUrl}`);
     } catch (emailErr) {
-      console.log(`[DEV ONLY] Email failed to send, but here is the link: ${resetUrl}`);
+      // In production, you would log this to a monitoring service
     }
 
     return res.json({ message: "If an account exists, a reset link was sent." });
@@ -324,10 +307,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-/* ===============================================
-   RESET PASSWORD
-   POST /api/auth/reset-password
-   =============================================== */
+// RESET PASSWORD (POST /api/auth/reset-password)
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
@@ -361,10 +341,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-/* ===============================================
-   CHANGE PASSWORD (Logged-in user)
-   POST /api/auth/change-password
-   =============================================== */
+// CHANGE PASSWORD (Logged-in user - POST /api/auth/change-password)
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;

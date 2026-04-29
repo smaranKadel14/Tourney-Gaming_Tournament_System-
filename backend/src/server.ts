@@ -55,6 +55,18 @@ app.get("/api/system/status", async (req, res) => {
 
 app.get("/", (req, res) => res.send("API running..."));
 
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Global Error Handler:", err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    message: err.message || "Internal Server Error",
+    details: err.details || null,
+    errors: err.errors || null,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {

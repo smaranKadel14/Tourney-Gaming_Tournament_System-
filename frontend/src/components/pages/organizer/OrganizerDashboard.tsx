@@ -146,7 +146,7 @@ const OrganizerDashboard = () => {
 
     } catch (err) {
 
-      console.error("Failed to post notice", err);
+      // Handled by UI
 
     }
 
@@ -228,7 +228,7 @@ const OrganizerDashboard = () => {
 
       } catch (error) {
 
-        console.error("Error fetching tournaments:", error);
+        // Handled by loading state
 
       } finally {
 
@@ -308,7 +308,7 @@ const OrganizerDashboard = () => {
 
       } catch (error) {
 
-        console.error("Error fetching stats:", error);
+        // Handled as 0
 
       }
 

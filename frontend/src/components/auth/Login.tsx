@@ -20,11 +20,11 @@ const Login = () => {
   const location = useLocation();
   const successMessage = location.state?.message;
 
-  // I am keeping state for email/password input
+  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // I am keeping loading + error for better feedback
+  // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,19 +41,19 @@ const Login = () => {
     try {
       setLoading(true);
 
-      // Calling backend login API
+      // API call
       const res = await api.post<LoginResponse>("/auth/login", {
         email,
         password,
       });
 
-      // Saving token + user in localStorage
+      // Persist auth
       saveAuth(res.data.token, res.data.user);
 
-      // Redirecting based on role
+      // Navigate based on role
       navigate(roleHomePath(res.data.user.role));
     } catch (err: any) {
-      // Showing backend error message if available
+      // Error feedback
       setError(err?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -65,9 +65,7 @@ const Login = () => {
       setLoading(true);
       setError("");
       
-      // DEV MODE MOCK: Automatically sends a simulated OAuth payload to our backend.
-      // For production, wrap the Google button in @react-oauth/google's <GoogleLogin>
-      // and redirect to Discord's OAuth2 authorization URL.
+      // DEV MODE MOCK: Simulated OAuth interaction.
       const mockPayload = {
         provider,
         providerId: `mock-${provider}-id-12345`,
