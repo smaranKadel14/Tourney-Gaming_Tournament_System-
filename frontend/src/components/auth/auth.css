@@ -15,12 +15,15 @@
 
 
 .auth-card {
-  width: 380px;
+  width: 90%;
+  max-width: 400px;
   background: rgba(15, 23, 42, 0.95);
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   color: #e5e7eb;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .auth-card h2 {
@@ -291,4 +294,18 @@ button:hover {
 
 .input-error:focus {
   border-color: #dc2626 !important;
+}
+/* Responsive Auth */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 24px 20px;
+  }
+  
+  .auth-card h2 {
+    font-size: 20px;
+  }
+
+  .auth-social-grid {
+    grid-template-columns: 1fr;
+  }
 }

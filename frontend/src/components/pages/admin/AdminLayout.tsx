@@ -1,6 +1,6 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus, Mail } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus, Mail, Menu, X } from "lucide-react";
 import { clearAuthUser } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -15,6 +15,12 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
 
   const handleLogout = () => {
     clearAuthUser();
@@ -25,44 +31,47 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
 
   return (
     <div className="admin-shell">
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && <div className="admin-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${isMobileMenuOpen ? 'admin-sidebar--open' : ''}`}>
         <div className="admin-brand">TOURNEY</div>
 
         <nav className="admin-nav">
           <button 
             className={`admin-nav-item ${isActive('/admin') || isActive('/admin/dashboard') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin')}
+            onClick={() => handleNavigate('/admin')}
           >
             <LayoutDashboard className="admin-nav-ic" size={16} /> Dashboard
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/users') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin/users')}
+            onClick={() => handleNavigate('/admin/users')}
           >
             <Users className="admin-nav-ic" size={16} /> Users
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/tournaments') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin/tournaments')}
+            onClick={() => handleNavigate('/admin/tournaments')}
           >
             <Trophy className="admin-nav-ic" size={16} /> Tournaments
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/messages') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin/messages')}
+            onClick={() => handleNavigate('/admin/messages')}
           >
             <Mail className="admin-nav-ic" size={16} /> Messages
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/logs') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin/logs')}
+            onClick={() => handleNavigate('/admin/logs')}
           >
             <FileText className="admin-nav-ic" size={16} /> System Logs
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/settings') ? 'admin-nav-item--active' : ''}`}
-            onClick={() => navigate('/admin/settings')}
+            onClick={() => handleNavigate('/admin/settings')}
           >
             <Settings className="admin-nav-ic" size={16} /> Settings
           </button>
@@ -77,6 +86,14 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
 
       {/* Main Content */}
       <main className="admin-main">
+        {/* Mobile Header */}
+        <div className="admin-mobile-header">
+          <button className="admin-menu-toggle" onClick={() => setIsMobileMenuOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <div className="admin-brand-mobile">TOURNEY</div>
+        </div>
+
         {/* Topbar */}
         <div className="admin-topbar">
           <div className="admin-breadcrumb">Home / <span>{breadcrumb}</span></div>

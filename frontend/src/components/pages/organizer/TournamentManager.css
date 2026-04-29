@@ -53,6 +53,13 @@
   border-bottom: 1px solid var(--border-light);
   margin-bottom: 24px;
   padding-bottom: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tm-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tm-tab {
@@ -520,12 +527,37 @@
 }
 
 @media (max-width: 640px) {
+  .tm-container {
+    padding: 16px;
+    margin-top: 10px;
+    border-radius: 12px;
+  }
+
+  .tm-title {
+    font-size: 18px;
+  }
+
+  .tm-tab {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
   .tm-form-grid {
     grid-template-columns: 1fr;
   }
+
   .tm-danger-card {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+
+  .tm-gen-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .tm-bracket-view {
+    grid-template-columns: 1fr;
   }
 }
 

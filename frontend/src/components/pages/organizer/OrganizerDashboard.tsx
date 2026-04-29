@@ -42,7 +42,11 @@ import {
 
   TrendingUp,
 
-  Megaphone
+  Megaphone,
+
+  Menu,
+
+  X
 
 } from "lucide-react";
 
@@ -59,6 +63,8 @@ const OrganizerDashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "create" | "my-tournaments" | "players" | "settings" | "manage-tournament">("dashboard");
 
   const [managingTournament, setManagingTournament] = useState<TournamentRow | null>(null);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 
 
@@ -378,9 +384,15 @@ const OrganizerDashboard = () => {
 
     <div className="od">
 
+      {/* Sidebar Mobile Overlay */}
+
+      {isMobileMenuOpen && <div className="od__overlay" onClick={() => setIsMobileMenuOpen(false)} />}
+
+
+
       {/* Sidebar */}
 
-      <aside className="od__sidebar">
+      <aside className={`od__sidebar ${isMobileMenuOpen ? "od__sidebar--open" : ""}`}>
 
         <div className="od__brand">TOURNEY</div>
 
@@ -392,7 +404,7 @@ const OrganizerDashboard = () => {
 
             className={`od__item ${activeView === "dashboard" ? "od__item--active" : ""}`}
 
-            onClick={() => setActiveView("dashboard")}
+            onClick={() => { setActiveView("dashboard"); setIsMobileMenuOpen(false); }}
 
           >
 
@@ -404,7 +416,7 @@ const OrganizerDashboard = () => {
 
             className={`od__item ${activeView === "create" ? "od__item--active" : ""}`}
 
-            onClick={() => setActiveView("create")}
+            onClick={() => { setActiveView("create"); setIsMobileMenuOpen(false); }}
 
           >
 
@@ -416,7 +428,7 @@ const OrganizerDashboard = () => {
 
             className={`od__item ${activeView === "my-tournaments" ? "od__item--active" : ""}`}
 
-            onClick={() => setActiveView("my-tournaments")}
+            onClick={() => { setActiveView("my-tournaments"); setIsMobileMenuOpen(false); }}
 
           >
 
@@ -428,7 +440,7 @@ const OrganizerDashboard = () => {
 
             className={`od__item ${activeView === "players" ? "od__item--active" : ""}`}
 
-            onClick={() => setActiveView("players")}
+            onClick={() => { setActiveView("players"); setIsMobileMenuOpen(false); }}
 
           >
 
@@ -440,7 +452,7 @@ const OrganizerDashboard = () => {
 
             className={`od__item ${activeView === "settings" ? "od__item--active" : ""}`}
 
-            onClick={() => setActiveView("settings")}
+            onClick={() => { setActiveView("settings"); setIsMobileMenuOpen(false); }}
 
           >
 
@@ -485,6 +497,20 @@ const OrganizerDashboard = () => {
       {/* Main */}
 
       <main className="od__main">
+
+        {/* Mobile Header Toggle */}
+
+        <div className="od__mobile-header">
+
+            <button className="od__menu-toggle" onClick={() => setIsMobileMenuOpen(true)}>
+
+                <Menu size={24} />
+
+            </button>
+
+            <div className="od__brand-mobile">TOURNEY</div>
+
+        </div>
 
         {/* Topbar — only shown on the main dashboard view */}
 
