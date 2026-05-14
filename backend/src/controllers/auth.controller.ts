@@ -43,10 +43,6 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    if (!email.toLowerCase().endsWith("@gmail.com")) {
-      return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
-    }
-
     if (password.length < 6) {
       return res
         .status(400)
@@ -207,9 +203,10 @@ export const oauthLogin = async (req: Request, res: Response) => {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanEmail.endsWith("@gmail.com")) {
-      return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
-    }
+    // Removed @gmail.com restriction for flexibility
+    // if (!cleanEmail.endsWith("@gmail.com")) {
+    //   return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
+    // }
 
     let user = await User.findOne({ email: cleanEmail });
 
@@ -263,7 +260,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     if (!email) return res.status(400).json({ message: "Email required" });
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
-    
+
     if (!user) return res.json({ message: "If an account exists, a reset link was sent." });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -272,15 +269,21 @@ export const forgotPassword = async (req: Request, res: Response) => {
     await user.save({ validateBeforeSave: false });
 
     const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
-    
+
     try {
+      //Log the link to the terminal so you don't need a real email server
+      console.log("\n" + "=".repeat(50));
+      console.log("PASSWORD RESET LINK:");
+      console.log(resetUrl);
+      console.log("=".repeat(50) + "\n");
+
       await transporter.sendMail({
         to: user.email,
         subject: "Password Reset Request",
         text: `You requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`
       });
     } catch (emailErr) {
-      // Log failure but don't expose to user
+      // Email might fail locally, but the link is printed above for the demo
     }
 
     return res.json({ message: "If an account exists, a reset link was sent." });

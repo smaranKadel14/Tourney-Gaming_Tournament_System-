@@ -34,7 +34,7 @@ const Signup = () => {
   // Real-time validation
   const getEmailError = () => {
     if (!email) return "";
-    if (!email.toLowerCase().endsWith("@gmail.com")) return "Must be a @gmail.com address";
+    // if (!email.toLowerCase().endsWith("@gmail.com")) return "Must be a @gmail.com address";
     return "";
   };
 
@@ -52,7 +52,7 @@ const Signup = () => {
 
   const isFormValid = 
     name.trim().length > 0 &&
-    email.toLowerCase().endsWith("@gmail.com") &&
+    email.includes("@") &&
     password.length >= 8 &&
     password === confirmPassword &&
     agreed;
@@ -111,7 +111,7 @@ const Signup = () => {
           <label>Full Name</label>
           <input
             type="text"
-            placeholder="e.g. John Doe"
+            placeholder="Your Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -119,7 +119,7 @@ const Signup = () => {
           <label>Email Address</label>
           <input
             type="email"
-            placeholder="name@gmail.com"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={getEmailError() ? "input-error" : ""}

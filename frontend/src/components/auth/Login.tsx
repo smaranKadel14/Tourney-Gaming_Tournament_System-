@@ -69,7 +69,7 @@ const Login = () => {
       const mockPayload = {
         provider,
         providerId: `mock-${provider}-id-12345`,
-        email: `gamer@${provider}.com`,
+        email: `${provider}-gamer@gmail.com`,
         fullName: `${provider === 'google' ? 'Google' : 'Discord'} Gamer`,
         avatarUrl: ""
       };
@@ -117,6 +117,7 @@ const Login = () => {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
             <span className="auth-input-icon" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
