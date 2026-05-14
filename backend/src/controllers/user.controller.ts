@@ -3,11 +3,11 @@ import User from "../models/User";
 import Registration from "../models/Registration";
 import Team from "../models/Team";
 
+// Returns the current user's profile and tournament history
 export const getProfile = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id || (req as any).user._id;
         
-        // Parallelize initial queries
         const [user, userTeams] = await Promise.all([
             User.findById(userId).select("-password"),
             Team.find({ members: userId })
@@ -55,6 +55,7 @@ export const getProfile = async (req: Request, res: Response) => {
     }
 };
 
+// Updates the user's basic profile information
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { fullName, bio, avatarUrl } = req.body;
@@ -81,6 +82,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     }
 };
 
+// Handles profile picture uploads
 export const uploadAvatar = async (req: Request, res: Response) => {
     try {
         if (!req.file) {
@@ -111,6 +113,7 @@ const escapeRegex = (text: string) => {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 };
 
+// Searches for players using a name query
 export const searchUsers = async (req: Request, res: Response) => {
     try {
         const { q } = req.query;
@@ -139,6 +142,7 @@ export const searchUsers = async (req: Request, res: Response) => {
     }
 };
 
+// Returns a public view of a user's profile
 export const getPublicProfile = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

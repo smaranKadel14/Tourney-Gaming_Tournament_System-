@@ -4,6 +4,8 @@ import { api } from "../../../lib/api";
 import { Search, User as UserIcon, Megaphone, Trash2, Users } from "lucide-react";
 import { getToken, getAuthUser } from "../../../utils/auth";
 import PlayerNavbar from "./PlayerNavbar";
+import PlayerFooter from "./PlayerFooter";
+import Pagination from "../../common/Pagination";
 import bg from "../../../assets/home/background.png";
 
 import "./Community.css";
@@ -42,6 +44,7 @@ type Announcement = {
 };
 
 export default function Community() {
+  // State for search queries and results
   const [query, setQuery] = useState("");
   const [teamQuery, setTeamQuery] = useState("");
   const [users, setUsers] = useState<UserSearchResult[]>([]);
@@ -50,6 +53,12 @@ export default function Community() {
   const [loading, setLoading] = useState(false);
   const [teamsLoading, setTeamsLoading] = useState(false);
   
+  // State for team pagination
+  const [teamPage, setTeamPage] = useState(1);
+  const [totalTeamPages, setTotalTeamPages] = useState(1);
+  const [totalTeams, setTotalTeams] = useState(0);
+  
+  // State for modals and form inputs
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [noticeTitle, setNoticeTitle] = useState("");
@@ -58,16 +67,22 @@ export default function Community() {
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamBio, setNewTeamBio] = useState("");
 
+  // Role-based access control
   const currentUser = getAuthUser();
   const isOrganizerOrAdmin = currentUser?.role === "organizer" || currentUser?.role === "admin";
   const isPlayer = currentUser?.role === "player";
 
+  // Initial data fetch
   useEffect(() => {
     fetchAnnouncements();
-    handleSearchTeams("");
   }, []);
 
-  // Debounced Player Search
+  // Fetch teams when page changes
+  useEffect(() => {
+    handleSearchTeams(teamQuery.trim(), teamPage);
+  }, [teamPage]);
+
+  // Debounced player search logic
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) {
@@ -75,20 +90,22 @@ export default function Community() {
       } else {
         setUsers([]);
       }
-    }, 400); // 400ms debounce
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Debounced Team Search
+  // Debounced team search logic
   useEffect(() => {
     const timer = setTimeout(() => {
-      handleSearchTeams(teamQuery.trim());
-    }, 400); // 400ms debounce
+      setTeamPage(1);
+      handleSearchTeams(teamQuery.trim(), 1);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [teamQuery]);
 
+  // Fetches all notices from the server
   const fetchAnnouncements = async () => {
     try {
       const res = await api.get("/announcements");
@@ -97,17 +114,14 @@ export default function Community() {
       console.error("Error fetching notices:", err);
     }
   };
-
-  const handleSearchTeams = async (q: string) => {
+  // Searches for teams with pagination support
+  const handleSearchTeams = async (q: string, page: number = 1) => {
     try {
       setTeamsLoading(true);
-      const res = await api.get("/teams"); // For now just fetch all teams or add search filter if needed
-      if (q) {
-          const filtered = res.data.filter((t: any) => t.name.toLowerCase().includes(q.toLowerCase()));
-          setTeams(filtered);
-      } else {
-          setTeams(res.data);
-      }
+      const res = await api.get(`/teams?page=${page}&limit=10&search=${q}`);
+      setTeams(res.data.teams || []);
+      setTotalTeamPages(res.data.totalPages || 1);
+      setTotalTeams(res.data.totalTeams || 0);
     } catch (err) {
       console.error("Error fetching teams:", err);
     } finally {
@@ -115,6 +129,7 @@ export default function Community() {
     }
   };
 
+  // Creates a new team record
   const handleCreateTeam = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!newTeamName.trim()) return;
@@ -131,6 +146,7 @@ export default function Community() {
       }
   };
 
+  // Searches for players using the API
   const handleSearch = async (searchQuery: string) => {
     try {
       setLoading(true);
@@ -154,6 +170,7 @@ export default function Community() {
     handleSearch(query);
   };
 
+  // Submits a new broadcast notice
   const handlePostNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noticeTitle.trim() || !noticeContent.trim()) return;
@@ -171,6 +188,7 @@ export default function Community() {
     }
   };
 
+  // Deletes an existing notice
   const handleDeleteNotice = async (id: string) => {
     if(!window.confirm("Are you sure you want to pull down this notice?")) return;
     try {
@@ -255,7 +273,7 @@ export default function Community() {
               <div className="comm-section-header">
                 <h2 className="comm-section-title">
                   <Users color="#a200ff" />
-                  Active Teams
+                  Active Teams {totalTeams > 0 && <span style={{ fontSize: '0.8rem', opacity: 0.5, marginLeft: '10px', fontWeight: 'normal' }}>({totalTeams} total)</span>}
                 </h2>
                 {isPlayer && (
                   <button className="comm-btn" onClick={() => setIsTeamModalOpen(true)}>
@@ -306,6 +324,16 @@ export default function Community() {
                   ))
                 )}
               </div>
+
+              {totalTeamPages > 1 && (
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                  <Pagination 
+                    currentPage={teamPage} 
+                    totalPages={totalTeamPages} 
+                    onPageChange={(p) => setTeamPage(p)} 
+                  />
+                </div>
+              )}
             </section>
           </div>
 
@@ -432,7 +460,7 @@ export default function Community() {
           </div>
         </div>
       )}
-
+      <PlayerFooter />
     </div>
   );
 }

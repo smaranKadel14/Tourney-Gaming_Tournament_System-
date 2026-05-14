@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
 import { Mail, Trash2, Clock, MessageSquare, Loader2 } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import { api } from "../../../lib/api";
+import Pagination from "../../common/Pagination";
 import "./AdminDashboard.css";
 
 type MessageItem = {
@@ -21,35 +22,54 @@ const AdminMessages = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<MessageItem | null>(null);
 
-  const fetchMessages = async () => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalMessages, setTotalMessages] = useState(0);
+  const limit = 10;
+
+  const fetchMessages = async (page: number, searchTerm: string) => {
     try {
+      setLoading(true);
       const token = getToken();
-      const res = await api.get("/contact", {
+      const res = await api.get(`/contact?page=${page}&limit=${limit}&search=${searchTerm}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMessages(res.data);
+      if (res.data) {
+        const messageList = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+        setMessages(messageList);
+        
+        if (!Array.isArray(res.data)) {
+          setTotalPages(res.data.totalPages || 1);
+          setTotalMessages(res.data.totalMessages || 0);
+          setCurrentPage(res.data.currentPage || 1);
+        } else {
+          setTotalMessages(res.data.length);
+        }
+        
+      }
     } catch (error) {
-      // Handled by loading state
+      console.error("Error fetching admin messages:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    const handler = setTimeout(() => {
+      fetchMessages(1, search);
+    }, 500);
 
-  const filteredMessages = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return messages;
-    return messages.filter(
-      (m) =>
-        m.firstName.toLowerCase().includes(q) ||
-        m.lastName.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q) ||
-        m.message.toLowerCase().includes(q)
-    );
-  }, [messages, search]);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    fetchMessages(currentPage, search);
+  }, [currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -61,7 +81,7 @@ const AdminMessages = () => {
       if (selectedMessage?._id === id) {
         setSelectedMessage(prev => prev ? { ...prev, status: "read" } : null);
       }
-    } catch (error) {
+    } catch {
       // Handled silenty
     }
   };
@@ -90,7 +110,7 @@ const AdminMessages = () => {
         <div className="admin-panel admin-activity-panel">
           <div className="admin-panel-head">
             <h2>Recent Messages</h2>
-            <span className="admin-td-muted">{messages.filter(m => m.status === 'pending').length} Unread</span>
+            <span className="admin-td-muted">{totalMessages} total</span>
           </div>
 
           <div className="admin-table-wrap">
@@ -112,14 +132,14 @@ const AdminMessages = () => {
                       <p className="admin-td-muted" style={{ marginTop: '8px' }}>Loading messages...</p>
                     </td>
                   </tr>
-                ) : filteredMessages.length === 0 ? (
+                ) : (!messages || messages.length === 0) ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: '32px' }}>
                       <span className="admin-td-muted">No messages found.</span>
                     </td>
                   </tr>
                 ) : (
-                  filteredMessages.map((m) => (
+                  messages.map((m) => (
                     <tr 
                       key={m._id} 
                       className={`admin-row-clickable ${selectedMessage?._id === m._id ? 'admin-row-selected' : ''} ${m.status === 'pending' ? 'admin-row-unread' : ''}`}
@@ -177,6 +197,14 @@ const AdminMessages = () => {
               </tbody>
             </table>
           </div>
+
+          {!loading && messages && messages.length > 0 && (
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={handlePageChange} 
+            />
+          )}
         </div>
 
         {/* Message Viewer Pane */}

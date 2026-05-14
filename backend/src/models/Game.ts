@@ -1,3 +1,4 @@
+// Defines the catalog of games supported by the platform for tournaments
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IGame extends Document {

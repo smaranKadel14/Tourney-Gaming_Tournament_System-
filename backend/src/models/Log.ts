@@ -1,3 +1,4 @@
+// Records security and operational events for auditing, including auth attempts and system errors
 import mongoose, { Document } from "mongoose";
 
 export type LogCategory = "AUTH" | "SYSTEM" | "USER" | "TOURNAMENT";

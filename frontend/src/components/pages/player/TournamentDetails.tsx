@@ -100,28 +100,25 @@ export default function TournamentDetails() {
     
     if (paymentResult === 'success') {
        setMessage("Payment successful! You are now registered for this tournament.");
-       // Clean up URL
        window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
+  // Fetches tournament details and user registration status
   useEffect(() => {
     const fetchTournamentAndStatus = async () => {
       setLoading(true);
       setError("");
       
       try {
-        // 1. Fetch Primary Tournament Data (MANDATORY)
         const response = await api.get(`/tournaments/${id}`);
         setTournament(response.data);
 
-        // 2. Fetch Secondary User-Specific Data (OPTIONAL - Don't fail the whole page)
         const token = getToken();
         const user = getAuthUser();
         
         if (token && response.data) {
           try {
-             // Check registration status
              const regRes = await api.get(`/tournaments/${id}/registration-status`, {
                  headers: { Authorization: `Bearer ${token}` }
              });
@@ -129,7 +126,6 @@ export default function TournamentDetails() {
                  setIsRegistered(true);
              }
 
-             // Fetch user teams if this is a team tournament
              if (response.data.teamSize > 1) {
                 const teamsRes = await api.get('/teams', {
                     headers: { Authorization: `Bearer ${token}` }
@@ -139,7 +135,6 @@ export default function TournamentDetails() {
              }
           } catch (secondaryErr) {
              console.warn("Could not load registration/team status:", secondaryErr);
-             // We don't set global error here because the tournament loaded
           }
         }
       } catch (err: any) {
@@ -154,6 +149,7 @@ export default function TournamentDetails() {
     }
   }, [id]);
 
+  // Processes tournament registration (direct or eSewa)
   const handleRegister = async (teamIdToUse?: string) => {
     const token = getToken();
     const user = getAuthUser();
@@ -249,14 +245,10 @@ export default function TournamentDetails() {
   const isFree = !tournament.registrationFee || tournament.registrationFee <= 0;
   const isPastDeadline = new Date() > new Date(tournament.registrationDeadline);
   const isSetupComplete = tournament.status === "completed";
-  
-  let displayStatus = tournament.status;
-  if (displayStatus === "upcoming" && isPastDeadline) {
-      displayStatus = "ongoing";
-  }
-
   const fullyRegistered = isRegistered;
   const canRegister = !isPastDeadline && !isSetupComplete && !fullyRegistered;
+
+  const displayStatus = tournament.status;
 
   return (
     <div className="td-page">

@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import Game from "../models/Game";
 
-// @desc    Get all games
-// @route   GET /api/games
-// @access  Public
+// Returns a list of all games available on the platform
 export const getGames = async (req: Request, res: Response) => {
     try {
         const isFeatured = req.query.featured === "true";
@@ -21,9 +19,7 @@ export const getGames = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Get single game by ID
-// @route   GET /api/games/:id
-// @access  Public
+// Returns details of a specific game by ID
 export const getGameById = async (req: Request, res: Response): Promise<void> => {
     try {
         const game = await Game.findById(req.params.id);

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import { getToken } from "../../../utils/auth";
 import PlayerNavbar from "./PlayerNavbar";
+import PlayerFooter from "./PlayerFooter";
 import "./Tournaments.css";
 
 // Assets
@@ -18,6 +19,7 @@ const getGameImage = (gameTitle?: string) => {
   if (title.includes("call of duty") || title.includes("cod") || title.includes("warzone")) return codImg;
   if (title.includes("counter-strike") || title.includes("cs")) return csImg;
   if (title.includes("league of legends") || title.includes("lol")) return lolImg;
+  if (title.includes("pubg") || title.includes("battlegrounds")) return codImg; // Use COD as a temporary similar style
   return valImg;
 };
 
@@ -66,19 +68,32 @@ export default function Tournaments() {
   const [myHistoryIds, setMyHistoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filter States - Default to empty to show all
+  // State for filtering and search
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string>('');
   const [showFreeOnly, setShowFreeOnly] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('All Status');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isGenreOpen, setIsGenreOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
+  const resetFilters = () => {
+    setSelectedGames([]);
+    setSelectedGenre('');
+    setShowFreeOnly(false);
+    setStatus('All Status');
+    setSearchQuery("");
+  };
 
 
+
+  // Computes the list of tournaments based on active filters
   const filteredTournaments = useMemo(() => {
     return tournaments.filter((t) => {
-      // 1. Game Filter
+      if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+
       if (selectedGames.length > 0) {
         const matchesGame = selectedGames.some(game => {
           const dbTitle = t.game?.title?.toLowerCase() || "";
@@ -89,44 +104,40 @@ export default function Tournaments() {
         if (!matchesGame) return false;
       }
       
-      // 2. Genre Filter
       if (selectedGenre) {
         const gameGenres = t.game?.genre || [];
         const matchesGenre = gameGenres.some(g => g.toLowerCase() === selectedGenre.toLowerCase());
         if (!matchesGenre) return false;
       }
 
-      // 3. Free Only Filter
       if (showFreeOnly && t.registrationFee > 0) {
         return false;
       }
 
-      // 4. Status Filter
-      // Map sidebar status to DB status
       let targetDbStatus = "";
       if (status === "Open Registration") targetDbStatus = "upcoming";
       else if (status === "Ongoing") targetDbStatus = "ongoing";
       
       if (targetDbStatus && t.status !== (targetDbStatus as any)) {
-          // If we are looking for 'upcoming' (Open Reg), show upcoming
-          if (targetDbStatus === "upcoming" && t.status === "upcoming") return true;
-          // If we are looking for 'ongoing', show ongoing
-          if (targetDbStatus === "ongoing" && t.status === "ongoing") return true;
-          
+          return false;
+      }
+
+      if (status === "Open Registration" && myHistoryIds.includes(t._id)) {
           return false;
       }
 
       return true;
     });
-  }, [tournaments, selectedGames, selectedGenre, showFreeOnly, status]);
+  }, [tournaments, selectedGames, selectedGenre, showFreeOnly, status, searchQuery]);
 
+  // Fetches tournaments and user history to highlight joined ones
   useEffect(() => {
     const fetchTournamentsAndHistory = async () => {
       try {
         const response = await api.get('/tournaments');
-        setTournaments(response.data);
+        const tournamentData = Array.isArray(response.data) ? response.data : response.data.tournaments;
+        setTournaments(tournamentData || []);
 
-        // Fetch user history to see if they're registered
         const token = getToken();
         if (token) {
            const profileRes = await api.get('/users/profile', {
@@ -168,13 +179,36 @@ export default function Tournaments() {
           {/* LEFT SIDEBAR */}
           <aside className={`pt-sidebar ${showFilters ? 'show' : ''}`}>
             <div className="pt-filters">
-              <h3 className="pt-filter-heading">FILTERS</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h3 className="pt-filter-heading">FILTERS</h3>
+                {(selectedGames.length > 0 || selectedGenre || showFreeOnly || status !== 'All Status' || searchQuery) && (
+                  <button className="pt-reset-btn" onClick={resetFilters}>Reset All</button>
+                )}
+              </div>
+
+              {/* Search Box */}
+              <div className="pt-filter-group">
+                <div className="pt-search-box">
+                  <i className="fas fa-search"></i>
+                  <input 
+                    type="text" 
+                    placeholder="Search tournaments..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button className="pt-search-clear" onClick={() => setSearchQuery("")}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* Popular Games */}
               <div className="pt-filter-group">
                 <h4 className="pt-filter-title">Popular Games</h4>
                 <div className="pt-checkbox-list">
-                  {['Valorant', 'Counter-Strike 2', 'League of Legends', 'Dota 2'].map(game => (
+                  {['Valorant', 'Counter-Strike 2', 'League of Legends', 'Call of Duty Warzone', 'PUBG'].map(game => (
                     <label key={game} className="pt-checkbox-label">
                       <input 
                         type="checkbox" 
@@ -257,24 +291,21 @@ export default function Tournaments() {
                 </div>
               </div>
             </div>
-
-
           </aside>
 
           {/* RIGHT CONTENT AREA */}
           <main className="pt-main">
             <header className="pt-feed-header">
               <div className="pt-feed-title-box">
-                <span className="pt-feed-label">LIVE COMPETITION FEED</span>
+                <span className="pt-feed-label">
+                  <span className="live-dot"></span>
+                  LIVE COMPETITION FEED
+                </span>
                 <h1 className="pt-feed-title">ACTIVE TOURNAMENTS</h1>
-              </div>
-              <div className="pt-feed-controls">
-                <button className="pt-sort-btn">
-                  <i className="fas fa-sort-amount-down"></i> Latest
-                </button>
-                <button className="pt-view-btn">
-                  <i className="fas fa-th-large"></i>
-                </button>
+                <p className="pt-results-count">
+                  Showing {filteredTournaments.length} {filteredTournaments.length === 1 ? 'tournament' : 'tournaments'}
+                  {tournaments.length !== filteredTournaments.length && ` (filtered from ${tournaments.length})`}
+                </p>
               </div>
             </header>
 
@@ -300,8 +331,8 @@ export default function Tournaments() {
                         </div>
                         <div className="pt-badge-type" style={{
                             position: 'absolute',
-                            top: '12px',
-                            left: '12px',
+                            top: '16px',
+                            right: '16px',
                             background: '#a200ff',
                             color: 'white',
                             padding: '4px 10px',
@@ -353,6 +384,7 @@ export default function Tournaments() {
           </main>
         </div>
       </div>
+      <PlayerFooter />
     </div>
   );
 }

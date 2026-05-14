@@ -1,3 +1,4 @@
+// Manages system and user-generated alerts for registrations, teams, and tournament updates
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface INotification extends Document {

@@ -3,35 +3,54 @@ import Registration from "../models/Registration";
 import Team from "../models/Team";
 import { Request, Response } from "express";
 import { createNotification } from "./notification.controller";
-import { v4 as uuidv4 } from "uuid";
 import CryptoJS from "crypto-js";
+import mongoose from "mongoose";
+import User from "../models/User";
 
-// @desc    Get all tournaments
-// @route   GET /api/tournaments
-// @access  Public
+// Returns all tournaments with optional status and search filtering
 export const getTournaments = async (req: Request, res: Response) => {
     try {
         const { status } = req.query;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
+        const skip = (page - 1) * limit;
 
-        let query = {};
+        let query: any = {};
         if (status) {
-            query = { status };
+            query.status = status;
         }
+
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { location: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        const totalTournaments = await Tournament.countDocuments(query);
+        const totalPages = Math.ceil(totalTournaments / limit);
 
         const tournaments = await Tournament.find(query)
             .populate("game", "title imageUrl genre")
-            .sort({ startDate: 1 });
+            .populate("organizer", "fullName name") // Populate organizer for name display
+            .sort({ startDate: 1 })
+            .skip(skip)
+            .limit(limit);
 
-        res.json(tournaments);
+        res.json({
+            tournaments,
+            totalTournaments,
+            totalPages,
+            currentPage: page
+        });
     } catch (error) {
         console.error("Error fetching tournaments:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
 
-// @desc    Get single tournament by ID
-// @route   GET /api/tournaments/:id
-// @access  Public
+// Returns a single tournament by its ID
 export const getTournamentById = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournament = await Tournament.findById(req.params.id)
@@ -49,9 +68,7 @@ export const getTournamentById = async (req: Request, res: Response): Promise<vo
     }
 };
 
-// @desc    Register for a tournament
-// @route   POST /api/tournaments/:id/register
-// @access  Private
+// Handles player/team registration for a tournament
 export const registerForTournament = async (req: Request, res: Response): Promise<void> => {
     try {
         // Note: This assumes req.user is set by an auth middleware. 
@@ -120,13 +137,11 @@ export const registerForTournament = async (req: Request, res: Response): Promis
     }
 };
 
-// @desc    Get dashboard stats for organizers
-// @route   GET /api/tournaments/organizer/stats
-// @access  Private (Organizer/Admin)
+// Aggregates earnings and registration trends for organizers
 export const getOrganizerStats = async (req: Request, res: Response): Promise<void> => {
     try {
         const organizerId = (req as any).user?.id;
-        
+
         // 1. Get tournaments owned by organizer
         const tournaments = await Tournament.find({ organizer: organizerId });
         const tournamentIds = tournaments.map(t => t._id);
@@ -184,7 +199,7 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
             d.setMonth(d.getMonth() - (5 - i));
             const month = d.getMonth() + 1;
             const year = d.getFullYear();
-            
+
             const match = trends.find(t => t._id.month === month && t._id.year === year);
             trendData.push({
                 label: monthNames[month - 1],
@@ -205,9 +220,7 @@ export const getOrganizerStats = async (req: Request, res: Response): Promise<vo
     }
 };
 
-// @desc    Get tournaments for the logged in organizer
-// @route   GET /api/tournaments/organizer/me
-// @access  Private (Organizer/Admin)
+// Returns tournaments created by the logged-in organizer
 export const getOrganizerTournaments = async (req: Request, res: Response): Promise<void> => {
     try {
         const organizerId = (req as any).user?.id;
@@ -249,34 +262,82 @@ export const getOrganizerTournaments = async (req: Request, res: Response): Prom
     }
 };
 
-// @desc    Get all player registrations across organizer's tournaments (per-registration rows)
-// @route   GET /api/tournaments/organizer/players
-// @access  Private (Organizer/Admin)
+// Returns all participants across an organizer's tournaments
 export const getOrganizerPlayers = async (req: Request, res: Response): Promise<void> => {
     try {
-        const organizerId = (req as any).user?.id;
+        const organizerId = (req as any).user?._id || (req as any).user?.id;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
         if (!organizerId) {
             res.status(401).json({ message: "Not authorized" });
             return;
         }
 
         // Get all tournaments owned by this organizer
-        const tournaments = await Tournament.find({ organizer: organizerId }).select("_id title");
+        const tournaments = await Tournament.find({ organizer: organizerId }).select("_id");
         const tournamentIds = tournaments.map(t => t._id);
-        const tournamentMap: Record<string, string> = {};
-        tournaments.forEach((t: any) => { tournamentMap[t._id.toString()] = t.title; });
 
         if (tournamentIds.length === 0) {
-            res.json([]);
+            res.json({
+                registrations: [],
+                totalRegistrations: 0,
+                totalPages: 0,
+                currentPage: page,
+                counts: { All: 0, pending: 0, confirmed: 0, rejected: 0, cancelled: 0 }
+            });
             return;
         }
 
-        // One row per registration — populate user and tournament info
-        const registrations = await Registration.find({ tournament: { $in: tournamentIds } })
+        const { search, status } = req.query;
+        let query: any = { tournament: { $in: tournamentIds } };
+
+        if (status && status !== "All") {
+            query.status = status;
+        }
+
+        if (search && typeof search === 'string' && search.trim() !== "") {
+            const searchTerm = search.trim();
+            const users = await User.find({
+                $or: [
+                    { fullName: { $regex: searchTerm, $options: "i" } },
+                    { email: { $regex: searchTerm, $options: "i" } }
+                ]
+            }).select("_id");
+            
+            const matchingUserIds = users.map(u => u._id);
+            query.user = { $in: matchingUserIds };
+        }
+
+        // Count total registrations across these tournaments
+        const totalRegistrations = await Registration.countDocuments(query);
+
+        // Get counts by status for tabs (still using base tournaments query to show total counts across tabs)
+        const statusCounts = await Registration.aggregate([
+            { $match: { tournament: { $in: tournamentIds } } },
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+
+        const counts: Record<string, number> = {
+            All: await Registration.countDocuments({ tournament: { $in: tournamentIds } }),
+            pending: 0,
+            confirmed: 0,
+            rejected: 0,
+            cancelled: 0
+        };
+        statusCounts.forEach((s: any) => {
+            counts[s._id] = s.count;
+        });
+
+        // One row per registration — populate user and tournament info with pagination
+        const registrations = await Registration.find(query)
             .populate("user", "fullName email avatarUrl createdAt")
             .populate("tournament", "title")
             .populate("team", "name logoUrl")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         const result = registrations.map((r: any) => ({
             registrationId: r._id,
@@ -296,16 +357,20 @@ export const getOrganizerPlayers = async (req: Request, res: Response): Promise<
             },
         }));
 
-        res.json(result);
+        res.json({
+            registrations: result,
+            totalRegistrations,
+            totalPages: Math.ceil(totalRegistrations / limit),
+            currentPage: page,
+            counts
+        });
     } catch (error) {
         console.error("Error fetching organizer players:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
 
-// @desc    Accept or reject a registration
-// @route   PATCH /api/tournaments/:id/registrations/:regId
-// @access  Private (Organizer/Admin)
+// Confirms or rejects a participant's registration
 export const updateRegistrationStatus = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id: tournamentId, regId } = req.params;
@@ -348,9 +413,7 @@ export const updateRegistrationStatus = async (req: Request, res: Response): Pro
     }
 };
 
-// @desc    Create a new tournament
-// @route   POST /api/tournaments
-// @access  Private (Organizer/Admin)
+// Creates a new tournament entry
 export const createTournament = async (req: Request, res: Response): Promise<void> => {
     try {
         const organizerId = (req as any).user?.id;
@@ -400,17 +463,15 @@ export const createTournament = async (req: Request, res: Response): Promise<voi
         res.status(201).json(tournament);
     } catch (error: any) {
         console.error("CRITICAL Error creating tournament:", error);
-        res.status(500).json({ 
-            message: error.message || "Server error", 
-            details: error.message, 
-            errors: error.errors 
+        res.status(500).json({
+            message: error.message || "Server error",
+            details: error.message,
+            errors: error.errors
         });
     }
 };
 
-// @desc    Delete a tournament
-// @route   DELETE /api/tournaments/:id
-// @access  Private (Admin or Organizer)
+// Deletes a tournament entry
 export const deleteTournament = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -438,9 +499,7 @@ export const deleteTournament = async (req: Request, res: Response): Promise<voi
     }
 };
 
-// @desc    Update a tournament
-// @route   PUT /api/tournaments/:id
-// @access  Private (Organizer/Admin)
+// Updates an existing tournament's details
 export const updateTournament = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -472,11 +531,11 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
             if (req.body[field] !== undefined) {
                 let value = req.body[field];
                 if (field === "teamSize") {
-                   value = Number(value);
-                   tournament.set("teamSize", value);
-                   tournament.markModified("teamSize");
+                    value = Number(value);
+                    tournament.set("teamSize", value);
+                    tournament.markModified("teamSize");
                 } else {
-                   (tournament as any).set(field, value);
+                    (tournament as any).set(field, value);
                 }
             }
         });
@@ -489,9 +548,7 @@ export const updateTournament = async (req: Request, res: Response): Promise<voi
     }
 };
 
-// @desc    Delete a registration
-// @route   DELETE /api/tournaments/:id/registrations/:regId
-// @access  Private (Organizer/Admin)
+// Removes a registration entry
 export const deleteRegistration = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id: tournamentId, regId } = req.params;
@@ -523,9 +580,7 @@ export const deleteRegistration = async (req: Request, res: Response): Promise<v
     }
 };
 
-// @desc    Get registrations for a specific tournament
-// @route   GET /api/tournaments/:id/registrations
-// @access  Private (Organizer/Admin)
+// Returns all registrations for a specific tournament
 export const getTournamentRegistrations = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -568,9 +623,7 @@ const generateEsewaSignature = (
     return CryptoJS.enc.Base64.stringify(hash);
 };
 
-// @desc    Initiate eSewa payment for tournament registration
-// @route   POST /api/tournaments/:id/esewa-payment
-// @access  Private
+// Initiates eSewa payment process for registration
 export const initiateEsewaPayment = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
@@ -672,9 +725,7 @@ export const initiateEsewaPayment = async (req: Request, res: Response): Promise
     }
 };
 
-// @desc    Handle eSewa success callback
-// @route   GET /api/tournaments/esewa/success
-// @access  Public (Called by eSewa)
+// Processes successful eSewa payment callback
 export const esewaSuccess = async (req: Request, res: Response): Promise<void> => {
     try {
         const encodedData = req.query.data as string;
@@ -714,10 +765,8 @@ export const esewaSuccess = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-// @desc    Handle eSewa failure callback
-// @route   GET /api/tournaments/esewa/failure
-// @access  Public (Called by eSewa)
-export const esewaFailure = async (req: Request, res: Response): Promise<void> => {
+// Handles eSewa payment failure callback
+export const esewaFailure = async (_req: Request, res: Response): Promise<void> => {
     try {
         // eSewa failure doesn't return the transaction_uuid cleanly in standard V2 testing, 
         // but we just redirect to a failure page on the frontend
@@ -728,9 +777,7 @@ export const esewaFailure = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-// @desc    Generate bracket for a tournament
-// @route   POST /api/tournaments/:id/bracket/generate
-// @access  Private (Organizer/Admin)
+// Generates a tournament bracket based on confirmed participants
 export const generateBracket = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -751,7 +798,7 @@ export const generateBracket = async (req: Request, res: Response): Promise<void
         const registrations = await Registration.find({ tournament: tournamentId, status: "confirmed" })
             .populate("user", "fullName")
             .populate("team", "name");
-        
+
         if (registrations.length < 4) {
             res.status(400).json({ message: "At least 4 confirmed participants are required to generate a bracket" });
             return;
@@ -780,11 +827,11 @@ export const generateBracket = async (req: Request, res: Response): Promise<void
             let team2 = null;
 
             if (i >= (totalMatches - byes) && playerIndex < participants.length) {
-                 // Wait, logic for byes. 
-                 // If byes = 2, we want 2 matches to have a bye.
+                // Wait, logic for byes. 
+                // If byes = 2, we want 2 matches to have a bye.
             }
             if (!team2 && playerIndex < participants.length && i >= byes) {
-                 team2 = participants[playerIndex++];
+                team2 = participants[playerIndex++];
             }
 
             roundOneSeeds.push({
@@ -853,9 +900,7 @@ export const generateBracket = async (req: Request, res: Response): Promise<void
     }
 };
 
-// @desc    Update tournament bracket data
-// @route   PUT /api/tournaments/:id/bracket
-// @access  Private (Organizer/Admin)
+// Manually updates the tournament bracket data
 export const updateBracket = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -892,9 +937,7 @@ export const updateBracket = async (req: Request, res: Response): Promise<void> 
     }
 };
 
-// @desc    Check whether the logged in user is registered for the given tournament
-// @route   GET /api/tournaments/:id/registration-status
-// @access  Private
+// Checks if the logged-in user is registered for a tournament
 export const checkRegistrationStatus = async (req: Request, res: Response): Promise<void> => {
     try {
         const tournamentId = req.params.id;
@@ -913,11 +956,11 @@ export const checkRegistrationStatus = async (req: Request, res: Response): Prom
         });
 
         if (registration) {
-            res.json({ 
-                isRegistered: true, 
-                paymentStatus: registration.paymentStatus, 
+            res.json({
+                isRegistered: true,
+                paymentStatus: registration.paymentStatus,
                 status: registration.status,
-                teamName: (registration as any).team?.name // Note: might need populating if user wants it
+                teamName: (registration as any).team?.name
             });
         } else {
             res.json({ isRegistered: false, paymentStatus: null, status: null });

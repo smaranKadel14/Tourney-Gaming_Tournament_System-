@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import "./OrganizerPlayers.css";
 import { Search, Download, Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { getToken } from "../../../utils/auth";
+import Pagination from "../../common/Pagination";
 
 const toUsername = (email: string) => email.split("@")[0];
 
@@ -21,7 +22,6 @@ type RegistrationRow = {
     avatarUrl?: string;
     memberSince?: string;
   };
-  // optimistic UI state
   _updating?: boolean;
 };
 
@@ -32,7 +32,6 @@ const statusLabel: Record<RegStatus, string> = {
   rejected: "Rejected",
 };
 
-// Map backend status to the CSS class suffix used in OrganizerPlayers.css
 const badgeCss: Record<RegStatus, string> = {
   confirmed: "active",
   pending: "pending",
@@ -45,30 +44,54 @@ const OrganizerPlayers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"All" | RegStatus>("All");
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRows, setTotalRows] = useState(0);
+  const [counts, setCounts] = useState<Record<string, number>>({ All: 0, pending: 0, confirmed: 0, rejected: 0, cancelled: 0 });
 
   const token = getToken();
 
   const fetchPlayers = useCallback(async () => {
+    setLoading(true);
     try {
       if (!token) return;
-      const res = await fetch("http://localhost:5000/api/tournaments/organizer/players", {
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: "10",
+        search: search.trim(),
+        status: activeTab
+      });
+
+      const res = await fetch(`http://localhost:5000/api/tournaments/organizer/players?${queryParams}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (res.ok) {
         const data = await res.json();
-        setRows(data);
+        setRows(data.registrations || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalRows(data.totalRegistrations || 0);
+        setCounts(data.counts || { All: 0, pending: 0, confirmed: 0, rejected: 0, cancelled: 0 });
       }
     } catch (err) {
       console.error("Failed to fetch players:", err);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, currentPage, search, activeTab]);
 
-  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  // Reset to page 1 when search or tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeTab]);
 
   const handleStatusChange = async (row: RegistrationRow, newStatus: "confirmed" | "rejected") => {
-    // Optimistic update
     setRows(prev => prev.map(r =>
       r.registrationId === row.registrationId ? { ...r, _updating: true } : r
     ));
@@ -82,13 +105,9 @@ const OrganizerPlayers = () => {
         }
       );
       if (res.ok) {
-        setRows(prev => prev.map(r =>
-          r.registrationId === row.registrationId
-            ? { ...r, status: newStatus, _updating: false }
-            : r
-        ));
+        // Refetch to get updated counts and potentially new data for the page
+        fetchPlayers();
       } else {
-        // Revert on failure
         setRows(prev => prev.map(r =>
           r.registrationId === row.registrationId ? { ...r, _updating: false } : r
         ));
@@ -106,20 +125,8 @@ const OrganizerPlayers = () => {
 
   const tabs: Array<"All" | RegStatus> = ["All", "pending", "confirmed", "rejected", "cancelled"];
 
-  const filtered = rows.filter((r) => {
-    const q = search.trim().toLowerCase();
-    const matchSearch = !q
-      || (r.user?.fullName || "").toLowerCase().includes(q)
-      || (r.user?.email || "").toLowerCase().includes(q)
-      || (r.tournamentName || "").toLowerCase().includes(q);
-    const matchTab = activeTab === "All" || r.status === activeTab;
-    return matchSearch && matchTab;
-  });
-
-  const countByTab = (tab: "All" | RegStatus) =>
-    tab === "All" ? rows.length : rows.filter(r => r.status === tab).length;
-
   const handleExportCSV = () => {
+    // Note: This only exports current page rows. In a real app, you'd fetch all or have a backend export.
     const csvRows = [
       ["Player", "Email", "Tournament", "Registered", "Status", "Payment"],
       ...rows.map(r => [
@@ -173,7 +180,7 @@ const OrganizerPlayers = () => {
               className={`op-tab ${activeTab === tab ? "op-tab--active" : ""} ${tab === "pending" ? "op-tab--pending" : ""}`}
               onClick={() => setActiveTab(tab)}
             >
-              {label} <span className="op-tab-count">{countByTab(tab)}</span>
+              {label} <span className="op-tab-count">{counts[tab] || 0}</span>
             </button>
           );
         })}
@@ -196,11 +203,11 @@ const OrganizerPlayers = () => {
               {loading ? (
                 <tr>
                   <td colSpan={6} className="op-empty">
-                    <div className="op-loader" />
+                    <Loader2 className="op-spin" size={24} style={{ margin: "0 auto 10px" }} />
                     <p>Loading registrations...</p>
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="op-empty">
                     <Users className="op-empty-icon" size={48} />
@@ -208,7 +215,7 @@ const OrganizerPlayers = () => {
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => (
+                rows.map((r) => (
                   <tr key={r.registrationId}>
                     <td>
                       <div className="op-playerInfo">
@@ -276,12 +283,13 @@ const OrganizerPlayers = () => {
 
         <div className="op-tableFooter">
           <div className="op-mutedSmall">
-            Showing {filtered.length} of {rows.length} registrations
+            Showing {rows.length} of {totalRows} registrations
           </div>
-          <div className="op-pager">
-            <button className="op-pagerBtn" disabled>Prev</button>
-            <button className="op-pagerBtn" disabled={filtered.length < 10}>Next</button>
-          </div>
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={(page) => setCurrentPage(page)} 
+          />
         </div>
       </div>
     </div>

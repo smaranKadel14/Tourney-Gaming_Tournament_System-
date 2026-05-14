@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 
 type JwtPayload = { id: string; role: string };
 
+// Verifies the JWT token in the Authorization header
 export const protect = (req: Request, res: Response, next: NextFunction) => {
   try {
     const auth = req.headers.authorization;
@@ -16,7 +17,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
 
-    // attach to req
+    // Attach decoded user identity to the request object
     // @ts-ignore
     req.user = { id: decoded.id, role: decoded.role };
 
@@ -26,6 +27,7 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+// Restricts access based on user roles (Admin, Organizer, etc.)
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // @ts-ignore

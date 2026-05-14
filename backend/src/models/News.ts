@@ -1,3 +1,4 @@
+// Stores esports news articles, announcements, and featured community updates
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface INews extends Document {
@@ -21,7 +22,7 @@ const newsSchema = new Schema<INews>(
         },
         excerpt: {
             type: String,
-            required: true,
+            default: "",
         },
         content: {
             type: String,
@@ -29,7 +30,7 @@ const newsSchema = new Schema<INews>(
         },
         imageUrl: {
             type: String,
-            required: true,
+            default: "",
         },
         author: {
             type: String,

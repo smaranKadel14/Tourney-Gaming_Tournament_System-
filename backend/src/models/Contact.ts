@@ -1,3 +1,4 @@
+// Stores inquiries and contact form submissions from users for administrative review
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IContact extends Document {

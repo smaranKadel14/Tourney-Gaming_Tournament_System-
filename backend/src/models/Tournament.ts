@@ -1,3 +1,4 @@
+// Stores tournament details including game, organizer, schedule, and bracket data
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITournament extends Document {

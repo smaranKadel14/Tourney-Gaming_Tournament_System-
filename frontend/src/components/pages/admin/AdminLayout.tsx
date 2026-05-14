@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus, Mail, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, FileText, Settings, LogOut, Search, UserPlus, Mail, Menu, Newspaper } from "lucide-react";
 import { clearAuthUser } from "../../../utils/auth";
 import "./AdminDashboard.css";
 
@@ -62,6 +62,12 @@ const AdminLayout = ({ children, breadcrumb, search, onSearch, showInvite }: Adm
             onClick={() => handleNavigate('/admin/messages')}
           >
             <Mail className="admin-nav-ic" size={16} /> Messages
+          </button>
+          <button 
+            className={`admin-nav-item ${isActive('/admin/news') ? 'admin-nav-item--active' : ''}`}
+            onClick={() => handleNavigate('/admin/news')}
+          >
+            <Newspaper className="admin-nav-ic" size={16} /> News
           </button>
           <button 
             className={`admin-nav-item ${isActive('/admin/logs') ? 'admin-nav-item--active' : ''}`}

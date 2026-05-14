@@ -1,3 +1,4 @@
+// Represents a user in the system with roles for player, organizer, or admin
 import mongoose, { Document } from "mongoose";
 
 export type UserRole = "player" | "organizer" | "admin";

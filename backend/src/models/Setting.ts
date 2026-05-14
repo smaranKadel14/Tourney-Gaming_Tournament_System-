@@ -1,3 +1,4 @@
+// Holds global platform configurations such as maintenance mode, support email, and platform fees
 import mongoose, { Document } from "mongoose";
 
 export interface ISetting extends Document {

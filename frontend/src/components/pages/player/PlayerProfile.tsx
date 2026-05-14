@@ -314,7 +314,6 @@ export default function PlayerProfile() {
         </div>
       )}
       </div>
-
       {imageToCrop && (
         <ImageCropper 
           imageSrc={imageToCrop} 

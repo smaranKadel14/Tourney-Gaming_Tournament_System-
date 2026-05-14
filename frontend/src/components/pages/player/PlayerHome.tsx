@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../../lib/api";
 import "./PlayerHome.css";
 import bg from "../../../assets/home/background.png";
@@ -7,8 +8,9 @@ import valImg from "../../../assets/Tournaments/VAL.png";
 import codImg from "../../../assets/Tournaments/COD.png";
 import csImg from "../../../assets/Tournaments/CS.png";
 import lolImg from "../../../assets/Tournaments/LOL.png";
-import { Trophy, Zap, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Trophy, Zap} from "lucide-react";
 import PlayerNavbar from "./PlayerNavbar";
+import PlayerFooter from "./PlayerFooter";
 
 const getGameImage = (gameTitle?: string) => {
   if (!gameTitle) return valImg;
@@ -33,10 +35,10 @@ export default function PlayerHome() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetches the featured game for the hero section
     const fetchFeaturedGame = async () => {
       try {
         const response = await api.get('/games?featured=true');
-        // Get the first featured game, if any
         if (response.data && response.data.length > 0) {
           setFeaturedGame(response.data[0]);
         }
@@ -125,7 +127,9 @@ export default function PlayerHome() {
                     <p><strong>Status:</strong> Available Now</p>
                   </div>
 
-                  <button className="ph__btnPrimary">VIEW TOURNAMENTS</button>
+                  <Link to="/player/tournaments" className="ph__btnPrimary" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                    VIEW TOURNAMENTS
+                  </Link>
                 </div>
               </>
             ) : (
@@ -133,21 +137,8 @@ export default function PlayerHome() {
             )}
           </div>
         </section>
-
-        {/* FOOTER */}
-        <footer className="ph__footer" id="contact">
-          <div className="ph__social">
-            <span className="social-icon"><Facebook size={20} /></span>
-            <span className="social-icon"><Twitter size={20} /></span>
-            <span className="social-icon"><Linkedin size={20} /></span>
-          </div>
-          <p className="ph__copyright">
-            © {new Date().getFullYear()} TOURNEY NEPAL. PROUDLY BUILT FOR GAMERS IN NEPAL 🇳🇵.
-            <br />ALL TRADEMARKS REFERENCED HEREIN ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS.
-            <br />LEVEL UP YOUR GAME.
-          </p>
-        </footer>
       </div>
+      <PlayerFooter />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+// Records user and team sign-ups for tournaments, including payment and validation status
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IRegistration extends Document {

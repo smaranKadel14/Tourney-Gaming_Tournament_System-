@@ -1,3 +1,4 @@
+// Manages team identities, including name, logo, captain, and roster members
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITeam extends Document {

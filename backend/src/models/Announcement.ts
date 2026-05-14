@@ -1,3 +1,4 @@
+// Represents global system notices broadcasted by administrators to the entire community
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IAnnouncement extends Document {

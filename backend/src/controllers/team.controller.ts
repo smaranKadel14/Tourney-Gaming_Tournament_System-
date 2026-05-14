@@ -4,9 +4,7 @@ import TeamJoinRequest from "../models/TeamJoinRequest";
 import User from "../models/User";
 import { createNotification } from "./notification.controller";
 
-// @desc    Create a new team
-// @route   POST /api/teams
-// @access  Private
+// Registers a new esports team in the system
 export const createTeam = async (req: Request, res: Response) => {
     try {
         const { name, bio, logoUrl } = req.body;
@@ -32,24 +30,40 @@ export const createTeam = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Get all teams
-// @route   GET /api/teams
-// @access  Public
+// Returns a paginated list of all active teams
 export const getTeams = async (req: Request, res: Response) => {
     try {
-        const teams = await Team.find()
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+        const search = req.query.search as string;
+
+        let query: any = {};
+        if (search && search.trim() !== "") {
+            query.name = { $regex: search.trim(), $options: "i" };
+        }
+
+        const totalTeams = await Team.countDocuments(query);
+        const teams = await Team.find(query)
             .populate("captain", "fullName avatarUrl")
-            .populate("members", "fullName avatarUrl");
-        res.json(teams);
+            .populate("members", "fullName avatarUrl")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            teams,
+            totalTeams,
+            totalPages: Math.ceil(totalTeams / limit),
+            currentPage: page
+        });
     } catch (error) {
         console.error("Error fetching teams:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
 
-// @desc    Get team by ID
-// @route   GET /api/teams/:id
-// @access  Public
+// Returns detailed information about a specific team
 export const getTeamById = async (req: Request, res: Response) => {
     try {
         const team = await Team.findById(req.params.id)
@@ -67,9 +81,7 @@ export const getTeamById = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Request to join a team
-// @route   POST /api/teams/:id/join
-// @access  Private
+// Handles a player's request to join a team
 export const requestToJoinTeam = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;
@@ -109,9 +121,7 @@ export const requestToJoinTeam = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Handle join request (Accept/Reject)
-// @route   PATCH /api/teams/:id/requests/:requestId
-// @access  Private (Captain only)
+// Captain reviews and responds to join requests
 export const handleJoinRequest = async (req: Request, res: Response) => {
     try {
         const { id: teamId, requestId } = req.params;
@@ -153,9 +163,7 @@ export const handleJoinRequest = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Get pending requests for a team
-// @route   GET /api/teams/:id/requests
-// @access  Private (Captain only)
+// Returns all pending join requests for a team
 export const getTeamRequests = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;
@@ -178,9 +186,7 @@ export const getTeamRequests = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Update team details
-// @route   PUT /api/teams/:id
-// @access  Private (Captain only)
+// Updates team metadata (name, bio, logo)
 export const updateTeam = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;
@@ -211,9 +217,7 @@ export const updateTeam = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Upload team logo
-// @route   POST /api/teams/:id/logo
-// @access  Private (Captain only)
+// Handles team logo image uploads
 export const uploadTeamLogo = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;
@@ -240,9 +244,7 @@ export const uploadTeamLogo = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Kick a member from the team
-// @route   DELETE /api/teams/:id/members/:userId
-// @access  Private (Captain only)
+// Captain removes a member from the team
 export const kickMember = async (req: Request, res: Response) => {
     try {
         const { id: teamId, userId: targetUserId } = req.params;
@@ -277,9 +279,7 @@ export const kickMember = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Transfer captainship to another member
-// @route   PATCH /api/teams/:id/captain
-// @access  Private (Captain only)
+// Transfers team ownership to another member
 export const transferCaptainship = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;
@@ -315,9 +315,7 @@ export const transferCaptainship = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Leave a team
-// @route   POST /api/teams/:id/leave
-// @access  Private
+// Allows a member to exit their current team
 export const leaveTeam = async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id;

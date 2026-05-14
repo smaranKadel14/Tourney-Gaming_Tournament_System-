@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import Notification from "../models/Notification";
 
-// @desc    Get notifications for the logged in user
-// @route   GET /api/notifications
-// @access  Private
+// Returns all notifications for the logged-in user
 export const getNotifications = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
@@ -18,9 +16,7 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
     }
 };
 
-// @desc    Mark a notification as read
-// @route   PATCH /api/notifications/:id/read
-// @access  Private
+// Marks a specific notification as seen by the user
 export const markAsRead = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
@@ -44,9 +40,7 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-// @desc    Mark all notifications as read for the logged in user
-// @route   PATCH /api/notifications/read-all
-// @access  Private
+// Marks all notifications for a user as seen
 export const markAllAsRead = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user?.id;
@@ -58,9 +52,19 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
     }
 };
 
-/**
- * Utility function to create a notification internally
- */
+// Deletes all notifications for the user
+export const clearAllNotifications = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        await Notification.deleteMany({ recipient: userId });
+        res.json({ message: "All notifications cleared" });
+    } catch (error) {
+        console.error("Error clearing all notifications:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Utility function to create internal notifications
 export const createNotification = async (data: {
     recipient: string;
     actor?: string;

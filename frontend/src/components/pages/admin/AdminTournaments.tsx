@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
 import { Download, Plus, Edit2, X, Gamepad2, Trophy, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
+import Pagination from "../../common/Pagination";
 import "./AdminDashboard.css"; // Reuse shared styling
 
 type TournamentStatus = "pending" | "upcoming" | "ongoing" | "completed" | "rejected";
@@ -24,16 +25,24 @@ const AdminTournaments = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<TournamentStatus>("upcoming");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTournaments, setTotalTournaments] = useState(0);
+  const limit = 10;
+
   // Fetch all tournaments on mount
-  const fetchTournaments = async () => {
+  const fetchTournaments = async (page: number, searchTerm: string) => {
     try {
-      const res = await fetch("http://localhost:5000/api/tournaments");
+      setLoading(true);
+      const res = await fetch(`http://localhost:5000/api/tournaments?page=${page}&limit=${limit}&search=${searchTerm}`);
       if (res.ok) {
         const data = await res.json();
-        const formatted = data.map((t: any) => ({
+        const tournamentList = Array.isArray(data) ? data : data.tournaments;
+        const formatted = tournamentList.map((t: any) => ({
           id: t._id,
           title: t.title,
-          organizer: t.organizer?.name || "Unknown",
+          organizer: t.organizer?.fullName || t.organizer?.name || "Unknown",
           startDate: new Date(t.startDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
           status: t.status as TournamentStatus,
           gameIcon: t.game?.title?.includes("Soccer") ? <Gamepad2 size={24} /> : <Trophy size={24} />,
@@ -41,28 +50,35 @@ const AdminTournaments = () => {
           raw: t
         }));
         setTournaments(formatted);
+        
+        if (!Array.isArray(data)) {
+          setTotalPages(data.totalPages);
+          setTotalTournaments(data.totalTournaments);
+          setCurrentPage(data.currentPage);
+        }
       }
-    } catch (error) {
-      console.error("Error fetching admin tournaments:", error);
+    } catch {
+      // Handled silenty
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTournaments();
-  }, []);
+    const handler = setTimeout(() => {
+      fetchTournaments(1, search);
+    }, 500);
 
-  const filteredTournaments = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tournaments;
-    return tournaments.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.organizer.toLowerCase().includes(q) ||
-        t.status.toLowerCase().includes(q)
-    );
-  }, [tournaments, search]);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    fetchTournaments(currentPage, search);
+  }, [currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const getStatusBadgeClass = (status: TournamentStatus) => {
     switch (status) {
@@ -108,8 +124,7 @@ const AdminTournaments = () => {
         const errorData = await res.json();
         alert(`Failed to update status: ${errorData.message}`);
       }
-    } catch (error) {
-      console.error("Error updating tournament status:", error);
+    } catch {
       alert("Server error. Could not update status.");
     }
   };
@@ -134,8 +149,7 @@ const AdminTournaments = () => {
         const errorData = await res.json();
         alert(`Failed to delete: ${errorData.message}`);
       }
-    } catch (error) {
-      console.error("Error deleting tournament:", error);
+    } catch {
       alert("Server error. Could not delete tournament.");
     }
   };
@@ -185,9 +199,6 @@ const AdminTournaments = () => {
           <button className="admin-btn admin-btn--secondary" onClick={handleExportData}>
             <Download className="admin-btn-ic" size={16} /> Export Data
           </button>
-          <button className="admin-btn admin-btn--primary" onClick={handleCreateTournament}>
-            <Plus className="admin-btn-ic" size={16} /> Create Tournament
-          </button>
         </div>
       </header>
 
@@ -195,7 +206,7 @@ const AdminTournaments = () => {
         <div className="admin-panel admin-activity-panel">
           <div className="admin-panel-head">
             <h2>All Tournaments</h2>
-            <span className="admin-td-muted">{filteredTournaments.length} active</span>
+            <span className="admin-td-muted">{totalTournaments} active</span>
           </div>
 
           <div className="admin-table-wrap">
@@ -216,14 +227,14 @@ const AdminTournaments = () => {
                       <span className="admin-td-muted">Loading tournaments...</span>
                     </td>
                   </tr>
-                ) : filteredTournaments.length === 0 ? (
+                ) : tournaments.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: '32px' }}>
                       <span className="admin-td-muted">No tournaments found.</span>
                     </td>
                   </tr>
                 ) : (
-                  filteredTournaments.map((t) => (
+                  tournaments.map((t) => (
                     <tr key={t.id}>
                       <td>
                         <div className="admin-activity-cell">
@@ -291,6 +302,14 @@ const AdminTournaments = () => {
               </tbody>
             </table>
           </div>
+
+          {!loading && tournaments.length > 0 && (
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={handlePageChange} 
+            />
+          )}
         </div>
       </section>
     </AdminLayout>

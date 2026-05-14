@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../lib/api";
 import PlayerNavbar from "./PlayerNavbar";
+import PlayerFooter from "./PlayerFooter";
 import "./News.css";
 
 // Assets
@@ -76,16 +77,8 @@ export default function News() {
             )}
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="pn-footer">
-          <p className="pn-copyright">
-            © 2026 NK GROUP INC. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
-            <br />LOGOS ARE REGISTERED TRADEMARKS. AND RELATED LOGOS ARE REGISTERED TRADEMARKS OR TRADEMARKS OF ID SOFTWARE LLC IN
-            <br />THE U.S. AND/OR OTHER COUNTRIES. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
-          </p>
-        </footer>
       </div>
+      <PlayerFooter />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
 import { Download, Plus, Edit2, X, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
+import Pagination from "../../common/Pagination";
 import "./AdminDashboard.css";
 
 type UserRole = "player" | "organizer" | "admin";
@@ -23,6 +24,12 @@ const AdminUsers = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<UserRole>("player");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const limit = 10;
+
   // Colors for avatars based on role
   const getAvatarStyle = (role: UserRole) => {
     switch (role) {
@@ -32,15 +39,16 @@ const AdminUsers = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number, searchTerm: string) => {
     try {
+      setLoading(true);
       const token = getToken();
-      const res = await fetch("http://localhost:5000/api/admin/users", {
+      const res = await fetch(`http://localhost:5000/api/admin/users?page=${page}&limit=${limit}&search=${searchTerm}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        const formatted = data.map((u: any) => {
+        const formatted = data.users.map((u: any) => {
           const style = getAvatarStyle(u.role);
           return {
             id: u._id,
@@ -53,28 +61,32 @@ const AdminUsers = () => {
           };
         });
         setUsers(formatted);
+        setTotalPages(data.totalPages);
+        setTotalUsers(data.totalUsers);
+        setCurrentPage(data.currentPage);
       }
-    } catch (error) {
-      console.error("Error fetching admin users:", error);
+    } catch {
+      // Handled by loading state
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    const handler = setTimeout(() => {
+      fetchUsers(1, search);
+    }, 500);
 
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        u.fullName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
-    );
-  }, [users, search]);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    fetchUsers(currentPage, search);
+  }, [currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
@@ -191,7 +203,7 @@ const AdminUsers = () => {
         <div className="admin-panel admin-activity-panel">
           <div className="admin-panel-head">
             <h2>All Users</h2>
-            <span className="admin-td-muted">{filteredUsers.length} total</span>
+            <span className="admin-td-muted">{totalUsers} total</span>
           </div>
 
           <div className="admin-table-wrap">
@@ -212,14 +224,14 @@ const AdminUsers = () => {
                       <span className="admin-td-muted">Loading users...</span>
                     </td>
                   </tr>
-                ) : filteredUsers.length === 0 ? (
+                ) : users.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: 'center', padding: '32px' }}>
                       <span className="admin-td-muted">No users found.</span>
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => (
+                  users.map((u) => (
                     <tr key={u.id}>
                       <td>
                         <div className="admin-activity-cell">
@@ -281,6 +293,14 @@ const AdminUsers = () => {
               </tbody>
             </table>
           </div>
+
+          {!loading && users.length > 0 && (
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={handlePageChange} 
+            />
+          )}
         </div>
       </section>
     </AdminLayout>

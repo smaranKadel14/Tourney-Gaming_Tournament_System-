@@ -7,16 +7,16 @@ import User from "../models/User";
 import Setting from "../models/Setting";
 import { logSystemEvent } from "../utils/logger";
 
-// Setup Nodemailer transporter (User should configure ENV variables later)
+// Configuration for sending emails
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Change depending on provider
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER || "test@example.com",
     pass: process.env.EMAIL_PASS || "password123",
   },
 });
 
-// Helper function to generate JWT token
+// Generates a signed JWT for authentication
 const signToken = (payload: { id: string; role: string }) => {
   const secret = process.env.JWT_SECRET as string;
 
@@ -25,19 +25,19 @@ const signToken = (payload: { id: string; role: string }) => {
   });
 };
 
-// REGISTER USER (POST /api/auth/register)
+// Handles new user registration
 export const register = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password, role } = req.body;
 
-    // Basic validation
+    // Validate required fields
     if (!fullName || !email || !password) {
       return res
         .status(400)
         .json({ message: "fullName, email, password are required" });
     }
 
-    // Email format validation
+    // Validate email format and domain
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
@@ -53,10 +53,10 @@ export const register = async (req: Request, res: Response) => {
         .json({ message: "Password must be at least 6 characters" });
     }
 
-    // Normalize email (avoid duplicate issue with uppercase/spaces)
+    // Standardize email input
     const cleanEmail = email.trim().toLowerCase();
 
-    // Check if email already exists
+    // Check for existing user
     const existing = await User.findOne({ email: cleanEmail });
 
     if (existing) {
@@ -65,18 +65,17 @@ export const register = async (req: Request, res: Response) => {
         .json({ message: "Email already registered" });
     }
 
-    // Hash password before saving
+    // Securely hash password
     const hashed = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create user record
     const user = await User.create({
       fullName,
-      email: cleanEmail, // save normalized email
+      email: cleanEmail,
       password: hashed,
       role: role || "player",
     });
 
-    // Generate token
     const token = signToken({
       id: user._id.toString(),
       role: user.role,
@@ -97,7 +96,6 @@ export const register = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("REGISTER ERROR:", err);
 
-    // Mongo duplicate key protection
     if (err.code === 11000) {
       return res.status(409).json({
         message: "Email already registered",
@@ -110,7 +108,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-// LOGIN USER (POST /api/auth/login)
+// Handles user login
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -121,10 +119,8 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // normalize email
     const cleanEmail = email.trim().toLowerCase();
 
-    // Find user
     const user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
@@ -140,7 +136,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Compare password
+    // Verify password match
     const ok = await bcrypt.compare(password, user.password);
 
     if (!ok) {
@@ -150,7 +146,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Check Maintenance Mode
+    // Check if platform is in maintenance mode
     const setting = await Setting.findOne();
     if (setting?.maintenanceMode && user.role !== "admin") {
       await logSystemEvent("Blocked Login", "AUTH", cleanEmail, "warning", "User attempted to login during Maintenance Mode");
@@ -159,7 +155,6 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate token
     const token = signToken({
       id: user._id.toString(),
       role: user.role,
@@ -185,9 +180,8 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// GET CURRENT USER (Protected Route - GET /api/auth/me)
+// Returns current user data
 export const me = async (req: Request, res: Response) => {
-  // user id comes from auth middleware
   // @ts-ignore
   const userId = req.user?.id;
 
@@ -202,7 +196,7 @@ export const me = async (req: Request, res: Response) => {
   return res.json({ user });
 };
 
-// OAUTH LOGIN (Google / Discord - POST /api/auth/oauth)
+// Handles OAuth login via Google or Discord
 export const oauthLogin = async (req: Request, res: Response) => {
   try {
     const { provider, providerId, email, fullName, avatarUrl } = req.body;
@@ -217,11 +211,9 @@ export const oauthLogin = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Only @gmail.com addresses are allowed" });
     }
 
-    // Find existing user by email
     let user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
-      // First time logging in with this OAuth provider, create an account
       user = await User.create({
         fullName: fullName || "Gamer",
         email: cleanEmail,
@@ -231,13 +223,11 @@ export const oauthLogin = async (req: Request, res: Response) => {
         role: "player",
       });
     } else {
-      // Link the new provider if necessary
       if (provider === "google" && !user.googleId) user.googleId = providerId;
       if (provider === "discord" && !user.discordId) user.discordId = providerId;
       await user.save();
     }
 
-    // Check Maintenance Mode
     const setting = await Setting.findOne();
     if (setting?.maintenanceMode && user.role !== "admin") {
       await logSystemEvent("Blocked OAuth", "AUTH", cleanEmail, "warning", "User attempted OAuth login during Maintenance Mode");
@@ -266,7 +256,7 @@ export const oauthLogin = async (req: Request, res: Response) => {
   }
 };
 
-// FORGOT PASSWORD (POST /api/auth/forgot-password)
+// Initiates password reset process
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -274,22 +264,15 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     
-    // For security, always return success even if email not found
     if (!user) return res.json({ message: "If an account exists, a reset link was sent." });
 
-    // Generate token
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     user.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
     await user.save({ validateBeforeSave: false });
 
-    // Send email
     const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
     
-    /* 
-       We try to send the email. If we fail (e.g., bad credentials), we still return success 
-       to the user for security, but the system logs the failure for the admin.
-    */
     try {
       await transporter.sendMail({
         to: user.email,
@@ -297,7 +280,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         text: `You requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`
       });
     } catch (emailErr) {
-      // In production, you would log this to a monitoring service
+      // Log failure but don't expose to user
     }
 
     return res.json({ message: "If an account exists, a reset link was sent." });
@@ -307,7 +290,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-// RESET PASSWORD (POST /api/auth/reset-password)
+// Completes password reset
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
@@ -316,7 +299,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Token and new password required" });
     }
 
-    // Hash the token from the user to compare it with the DB
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const user = await User.findOne({
@@ -328,7 +310,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Token is invalid or has expired" });
     }
 
-    // Set new password
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
@@ -341,7 +322,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// CHANGE PASSWORD (Logged-in user - POST /api/auth/change-password)
+// Allows logged-in user to change password
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;

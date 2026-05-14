@@ -2,6 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+// Generic factory function for creating disk-based file upload middleware
 const createUploadMiddleware = (folder: string, prefix: string) => {
     const uploadDir = path.join(__dirname, `../../uploads/${folder}`);
     if (!fs.existsSync(uploadDir)) {
@@ -38,8 +39,10 @@ const createUploadMiddleware = (folder: string, prefix: string) => {
     });
 };
 
+// Specific middleware instances for different upload categories
 export const profileUpload = createUploadMiddleware("profiles", "avatar");
 export const bannerUpload  = createUploadMiddleware("banners", "banner");
 export const teamUpload    = createUploadMiddleware("teams", "logo");
+export const newsUpload    = createUploadMiddleware("news", "image");
 
 export default profileUpload;

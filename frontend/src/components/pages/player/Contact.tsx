@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PlayerNavbar from "./PlayerNavbar";
+import PlayerFooter from "./PlayerFooter";
 import { api } from "../../../lib/api";
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import "./Contact.css";
@@ -171,21 +172,8 @@ export default function Contact() {
             </form>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="pc-footer">
-          <div className="pc-socials">
-            <Facebook size={24} />
-            <Twitter size={24} />
-            <Instagram size={24} />
-            <Linkedin size={24} />
-          </div>
-          <p className="pc-copyright">
-            © 2026 TOURNEY NEPAL. DEVELOPED IN ASSOCIATION WITH LOREMINC, IPSUMCOMPANY, SITAMMETGROUP. CUMSIT AND RELATED
-            <br />LOGOS ARE REGISTERED TRADEMARKS. ALL OTHER TRADEMARKS OR TRADE NAMES ARE THE PROPERTY OF THEIR RESPECTIVE OWNERS. ALL RIGHTS RESERVED.
-          </p>
-        </footer>
       </div>
+      <PlayerFooter />
     </div>
   );
 }

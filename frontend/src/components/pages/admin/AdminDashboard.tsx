@@ -211,9 +211,6 @@ const AdminDashboard = () => {
           <button className="admin-btn admin-btn--secondary" onClick={() => setIsNoticeModalOpen(true)}>
             <Megaphone className="admin-btn-ic" size={16} /> Broadcast Notice
           </button>
-          <button className="admin-btn admin-btn--primary">
-            <Plus className="admin-btn-ic" size={16} /> Create Tournament
-          </button>
         </div>
       </header>
 

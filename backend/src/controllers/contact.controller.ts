@@ -37,9 +37,37 @@ export const submitMessage = async (req: Request, res: Response) => {
 
 export const getMessages = async (req: Request, res: Response) => {
   try {
-    const messages = await Contact.find().sort({ createdAt: -1 });
-    res.json(messages);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const skip = (page - 1) * limit;
+
+    let query: any = {};
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { message: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const totalMessages = await Contact.countDocuments(query);
+    const totalPages = Math.ceil(totalMessages / limit);
+
+    const messages = await Contact.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      messages,
+      totalMessages,
+      totalPages,
+      currentPage: page
+    });
   } catch (error) {
+    console.error("Get Messages Error:", error);
     res.status(500).json({ message: "Server Error", error });
   }
 };

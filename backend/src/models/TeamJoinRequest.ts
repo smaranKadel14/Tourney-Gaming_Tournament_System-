@@ -1,3 +1,4 @@
+// Tracks requests from players to join specific teams and the corresponding approval status
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITeamJoinRequest extends Document {

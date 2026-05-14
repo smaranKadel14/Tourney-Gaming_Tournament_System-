@@ -81,6 +81,21 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
     }
   };
 
+  const clearAllNotifications = async () => {
+    if (!window.confirm("Are you sure you want to clear all notifications?")) return;
+    try {
+      const res = await fetch("http://localhost:5000/api/notifications/clear-all", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error clearing all notifications:", error);
+    }
+  };
+
   const getTimeAgo = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
@@ -105,7 +120,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
     <div className="nd" ref={dropdownRef}>
       <div className="nd__header">
         <h3 className="nd__title">Notifications</h3>
-        <button className="nd__readAll" onClick={markAllAsRead}>Mark all read</button>
+        <div className="nd__headerActions">
+          <button className="nd__readAll" onClick={markAllAsRead}>Mark all read</button>
+        </div>
       </div>
 
       <div className="nd__list">
@@ -142,7 +159,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
       </div>
 
       <div className="nd__footer">
-        <button className="nd__viewAll">View All Notifications</button>
+        <button className="nd__clearAllFooter" onClick={clearAllNotifications}>Clear all notifications</button>
       </div>
     </div>
   );

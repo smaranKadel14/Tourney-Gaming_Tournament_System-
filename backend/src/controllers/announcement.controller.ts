@@ -3,11 +3,11 @@ import Announcement from "../models/Announcement";
 import Notification from "../models/Notification";
 import User from "../models/User";
 
+// Posts a new global announcement and notifies all players
 export const createAnnouncement = async (req: Request, res: Response) => {
     try {
         const { title, content } = req.body;
         const authorId = (req as any).user.id || (req as any).user._id;
-
         const announcement = new Announcement({
             title,
             content,
@@ -36,6 +36,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
     }
 };
 
+// Returns the most recent system announcements
 export const getAnnouncements = async (req: Request, res: Response) => {
     try {
         const announcements = await Announcement.find()
@@ -49,6 +50,7 @@ export const getAnnouncements = async (req: Request, res: Response) => {
     }
 };
 
+// Removes an announcement from the global board
 export const deleteAnnouncement = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

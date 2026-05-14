@@ -6,8 +6,8 @@ import Log from "../models/Log";
 import Setting from "../models/Setting";
 import { logSystemEvent } from "../utils/logger";
 
-// Get dashboard statistics
-export const getDashboardStats = async (req: Request, res: Response) => {
+// Returns high-level statistics for the admin dashboard
+export const getDashboardStats = async (_req: Request, res: Response) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalTournaments = await Tournament.countDocuments();
@@ -38,8 +38,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   }
 };
 
-// Get recent activity
-export const getRecentActivity = async (req: Request, res: Response) => {
+// Returns a feed of recent system and user activities
+export const getRecentActivity = async (_req: Request, res: Response) => {
   try {
     const activities: any[] = [];
     
@@ -86,8 +86,8 @@ export const getRecentActivity = async (req: Request, res: Response) => {
   }
 };
 
-// Get pending approvals
-export const getPendingApprovals = async (req: Request, res: Response) => {
+// Returns a list of items requiring admin approval
+export const getPendingApprovals = async (_req: Request, res: Response) => {
   try {
     const approvals: any[] = [];
     
@@ -136,7 +136,7 @@ export const getPendingApprovals = async (req: Request, res: Response) => {
   }
 };
 
-// Approve pending item
+// Approves a pending tournament or user registration
 export const approvePendingItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -178,7 +178,7 @@ export const approvePendingItem = async (req: Request, res: Response) => {
   }
 };
 
-// Reject pending item
+// Rejects a pending tournament or user registration
 export const rejectPendingItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -217,26 +217,47 @@ export const rejectPendingItem = async (req: Request, res: Response) => {
   }
 };
 
-// Get all users (Admin)
+// Returns a paginated list of all registered users
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    // Optional query params for pagination and search
-    // const page = parseInt(req.query.page as string) || 1;
-    // const limit = parseInt(req.query.limit as string) || 50;
-    // const skip = (page - 1) * limit;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const skip = (page - 1) * limit;
 
-    const users = await User.find()
+    let filter: any = {};
+    if (search) {
+      filter = {
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { role: { $regex: search, $options: "i" } }
+        ]
+      };
+    }
+
+    const totalUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const users = await User.find(filter)
       .select("-password")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    res.json(users);
+    res.json({
+      users,
+      totalUsers,
+      totalPages,
+      currentPage: page
+    });
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ message: "Failed to fetch users" });
   }
 };
 
-// Update user role (Admin)
+// Updates a user's role (Player/Organizer/Admin)
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -263,7 +284,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
   }
 };
 
-// Delete user (Admin)
+// Permanently deletes a user from the system
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -282,7 +303,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-// Get system logs
+// Returns system event logs for auditing
 export const getLogs = async (req: Request, res: Response) => {
   try {
     const { severity } = req.query;
@@ -303,8 +324,8 @@ export const getLogs = async (req: Request, res: Response) => {
   }
 };
 
-// Platform Settings
-export const getSettings = async (req: Request, res: Response) => {
+// Returns global platform configuration settings
+export const getSettings = async (_req: Request, res: Response) => {
   try {
     let settings = await Setting.findOne();
     if (!settings) {
@@ -317,6 +338,7 @@ export const getSettings = async (req: Request, res: Response) => {
   }
 };
 
+// Updates global platform configuration
 export const updateSettings = async (req: Request, res: Response) => {
   try {
     const adminId = (req as any).user?.email || "System Admin";
@@ -337,7 +359,7 @@ export const updateSettings = async (req: Request, res: Response) => {
   }
 };
 
-// System Operations
+// Forcefully clears system caches (simulated)
 export const purgeSystemCache = async (req: Request, res: Response) => {
   try {
     const adminId = (req as any).user?.email || "System Admin";
