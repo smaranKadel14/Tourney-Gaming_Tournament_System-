@@ -41,6 +41,8 @@ type Tournament = {
   status: "upcoming" | "ongoing" | "completed";
   teamSize: number;
   imageUrl?: string;
+  participantsCount?: number;
+  maxParticipants?: number;
 };
 
 const TournamentSkeleton = () => {
@@ -362,7 +364,9 @@ export default function Tournaments() {
                           <div className="pt-stat-box pt-stat-slots">
                             <span className="pt-stat-label">SLOTS</span>
                             <div className="pt-slot-value-wrap">
-                              <span className="pt-stat-value-white">48/64</span>
+                              <span className="pt-stat-value-white">
+                                {tourney.participantsCount || 0} / {tourney.maxParticipants === 0 ? "∞" : (tourney.maxParticipants || 64)}
+                              </span>
                               <i className="fas fa-user-friends"></i>
                             </div>
                           </div>

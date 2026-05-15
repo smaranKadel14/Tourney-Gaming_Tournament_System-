@@ -33,13 +33,34 @@ export const getTournaments = async (req: Request, res: Response) => {
 
         const tournaments = await Tournament.find(query)
             .populate("game", "title imageUrl genre")
-            .populate("organizer", "fullName name") // Populate organizer for name display
+            .populate("organizer", "fullName name")
             .sort({ startDate: 1 })
             .skip(skip)
             .limit(limit);
 
+        // More robust counting using Aggregation
+        const tournamentIds = tournaments.map(t => t._id);
+        const counts = await Registration.aggregate([
+            { $match: { tournament: { $in: tournamentIds }, status: "confirmed" } },
+            { $group: { _id: "$tournament", count: { $sum: 1 } } }
+        ]);
+
+        // Map the counts back to the tournament objects
+        const countMap: Record<string, number> = {};
+        counts.forEach(c => {
+            countMap[c._id.toString()] = c.count;
+        });
+
+        const tournamentsWithCounts = tournaments.map(t => {
+            const obj = t.toObject();
+            return {
+                ...obj,
+                participantsCount: countMap[t._id.toString()] || 0
+            };
+        });
+
         res.json({
-            tournaments,
+            tournaments: tournamentsWithCounts,
             totalTournaments,
             totalPages,
             currentPage: page
