@@ -139,6 +139,23 @@ export const registerForTournament = async (req: Request, res: Response): Promis
             status: "pending"
         });
 
+        // Notify the Organizer
+        try {
+            const team = await Team.findById(teamId);
+            const tourney = await Tournament.findById(tournamentId);
+            
+            if (team && tourney) {
+                await createNotification({
+                    recipient: tourney.organizer.toString(),
+                    type: "registration",
+                    message: `New Registration: Team "${team.name}" has joined "${tourney.title}".`,
+                    link: `/organizer/tournaments`
+                });
+            }
+        } catch (notifErr) {
+            console.error("Failed to send organizer notification:", notifErr);
+        }
+
         res.status(201).json({
             message: "Successfully registered for tournament",
             registration
@@ -776,7 +793,9 @@ export const esewaSuccess = async (req: Request, res: Response): Promise<void> =
         }
 
         // Verify the transaction UUID exists in our database
-        const registration = await Registration.findOne({ transactionId: data.transaction_uuid });
+        const registration = await Registration.findOne({ transactionId: data.transaction_uuid })
+            .populate("tournament")
+            .populate("team");
 
         if (!registration) {
             res.status(404).json({ message: "Registration record not found" });
@@ -787,6 +806,17 @@ export const esewaSuccess = async (req: Request, res: Response): Promise<void> =
         registration.paymentStatus = "completed";
         registration.status = "confirmed";
         await registration.save();
+
+        // Notify the Organizer
+        const tourney = registration.tournament as any;
+        const team = registration.team as any;
+        
+        await createNotification({
+            recipient: tourney.organizer,
+            type: "registration",
+            message: `New Registration: Team "${team?.name || 'A player'}" has joined "${tourney.title}".`,
+            link: `/organizer/tournaments` // Link to their dashboard
+        });
 
         // Redirect to a frontend success page
         res.redirect(`http://localhost:5173/tournament/${registration.tournament}?payment=success`);
