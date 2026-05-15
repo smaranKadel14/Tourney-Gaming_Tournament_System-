@@ -14,6 +14,7 @@ export interface IUser extends Document {
   discordId?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  status: "pending" | "active" | "rejected";
 }
 
 const userSchema = new mongoose.Schema<IUser>(
@@ -27,7 +28,8 @@ const userSchema = new mongoose.Schema<IUser>(
     googleId: { type: String },
     discordId: { type: String },
     resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date }
+    resetPasswordExpires: { type: Date },
+    status: { type: String, enum: ["pending", "active", "rejected"], default: "active" }
   },
   { timestamps: true }
 );

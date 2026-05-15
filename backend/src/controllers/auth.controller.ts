@@ -70,6 +70,7 @@ export const register = async (req: Request, res: Response) => {
       email: cleanEmail,
       password: hashed,
       role: role || "player",
+      status: (role === "organizer") ? "pending" : "active",
     });
 
     const token = signToken({

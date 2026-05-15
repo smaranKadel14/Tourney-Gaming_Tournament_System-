@@ -13,6 +13,7 @@ type UserItem = {
   email: string;
   role: UserRole;
   joinedDate: string;
+  status: string;
   avatarBg: string;
   avatarColor: string;
 };
@@ -56,6 +57,7 @@ const AdminUsers = () => {
             email: u.email,
             role: u.role,
             joinedDate: new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+            status: u.status || "active",
             avatarBg: style.bg,
             avatarColor: style.color
           };
@@ -99,6 +101,15 @@ const AdminUsers = () => {
 
   const formatRoleText = (role: string) => {
     return role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "active": return "admin-badge--completed";
+      case "pending": return "admin-badge--pending-review";
+      case "rejected": return "admin-badge--no";
+      default: return "admin-badge--processing";
+    }
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -213,6 +224,7 @@ const AdminUsers = () => {
                   <th>USER</th>
                   <th>EMAIL</th>
                   <th>ROLE</th>
+                  <th>STATUS</th>
                   <th>JOINED DATE</th>
                   <th style={{ textAlign: 'right' }}>ACTIONS</th>
                 </tr>
@@ -262,6 +274,11 @@ const AdminUsers = () => {
                             {formatRoleText(u.role)}
                           </span>
                         )}
+                      </td>
+                      <td>
+                        <span className={`admin-badge ${getStatusBadgeClass(u.status)}`}>
+                          {u.status.toUpperCase()}
+                        </span>
                       </td>
                       <td className="admin-td-muted">{u.joinedDate}</td>
                       <td style={{ textAlign: 'right' }}>

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 import { Users, Trophy, Gamepad2, Plus, Flag, Briefcase, ArrowRight, Loader2, Megaphone } from "lucide-react";
 import { getToken } from "../../../utils/auth";
@@ -24,6 +25,7 @@ type ApprovalItem = {
 };
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [stats, setStats] = useState<any[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -334,7 +336,12 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              <button className="admin-btn admin-btn--outline admin-btn--full">View All Pending</button>
+              <button 
+                className="admin-btn admin-btn--outline admin-btn--full"
+                onClick={() => navigate('/admin/tournaments')}
+              >
+                View All Pending
+              </button>
             </div>
           </section>
         </>

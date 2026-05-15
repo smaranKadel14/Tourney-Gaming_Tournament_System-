@@ -16,7 +16,7 @@ export interface ITournament extends Document {
     maxParticipants: number;
     teamSize: number;
     imageUrl: string;
-    status: "upcoming" | "ongoing" | "completed";
+    status: "pending" | "upcoming" | "ongoing" | "completed" | "rejected";
     bracketData?: any;
     createdAt: Date;
     updatedAt: Date;
@@ -84,8 +84,8 @@ const tournamentSchema = new Schema<ITournament>(
         },
         status: {
             type: String,
-            enum: ["upcoming", "ongoing", "completed"],
-            default: "upcoming",
+            enum: ["pending", "upcoming", "ongoing", "completed", "rejected"],
+            default: "pending",
         },
         bracketData: {
             type: Schema.Types.Mixed,
