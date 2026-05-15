@@ -52,6 +52,8 @@ export default function Community() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
   const [teamsLoading, setTeamsLoading] = useState(false);
+  const [joinedTeams, setJoinedTeams] = useState<TeamResult[]>([]);
+  const [joinedLoading, setJoinedLoading] = useState(false);
   
   // State for team pagination
   const [teamPage, setTeamPage] = useState(1);
@@ -75,6 +77,9 @@ export default function Community() {
   // Initial data fetch
   useEffect(() => {
     fetchAnnouncements();
+    if (currentUser) {
+      fetchJoinedTeams();
+    }
   }, []);
 
   // Fetch teams when page changes
@@ -126,6 +131,20 @@ export default function Community() {
       console.error("Error fetching teams:", err);
     } finally {
       setTeamsLoading(false);
+    }
+  };
+
+  const fetchJoinedTeams = async () => {
+    try {
+      setJoinedLoading(true);
+      const res = await api.get("/teams/my-joined-teams", {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      setJoinedTeams(res.data);
+    } catch (err) {
+      console.error("Error fetching joined teams:", err);
+    } finally {
+      setJoinedLoading(false);
     }
   };
 
@@ -339,6 +358,41 @@ export default function Community() {
 
           {/* Sidebar Column */}
           <aside className="comm-sidebar">
+            {/* My Teams Section */}
+            {currentUser && (
+              <section className="comm-section">
+                <div className="comm-section-header">
+                  <h2 className="comm-section-title">
+                    <Users color="#a200ff" size={20} />
+                    My Teams
+                  </h2>
+                </div>
+                <div className="sidebar-teams-list">
+                  {joinedLoading ? (
+                    <div className="comm-state-msg-small">Loading...</div>
+                  ) : joinedTeams.length === 0 ? (
+                    <div className="comm-state-msg-small">You haven't joined any teams yet.</div>
+                  ) : (
+                    joinedTeams.map(team => (
+                      <Link to={`/player/team/${team._id}`} key={team._id} className="sidebar-team-item">
+                        {team.logoUrl ? (
+                          <img src={`http://localhost:5000${team.logoUrl}`} alt="" className="sidebar-team-logo" />
+                        ) : (
+                          <div className="sidebar-team-logo-placeholder"><Users size={14} /></div>
+                        )}
+                        <div className="sidebar-team-info">
+                          <span className="sidebar-team-name">{team.name}</span>
+                          <span className="sidebar-team-role">
+                            {team.captain?._id === currentUser.id ? "Captain" : "Member"}
+                          </span>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </section>
+            )}
+
             {/* Player Search Section */}
             <section className="comm-section">
               <div className="comm-section-header">

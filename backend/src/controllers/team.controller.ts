@@ -349,3 +349,30 @@ export const leaveTeam = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Server error" });
     }
 };
+// Returns all teams where the current user is the captain
+export const getMyTeams = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const teams = await Team.find({ captain: userId })
+            .populate("captain", "fullName avatarUrl")
+            .populate("members", "fullName avatarUrl");
+        res.json(teams);
+    } catch (error) {
+        console.error("Error fetching my teams:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+// Returns all teams where the current user is a member (including captain)
+export const getJoinedTeams = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const teams = await Team.find({ members: userId })
+            .populate("captain", "fullName avatarUrl")
+            .populate("members", "fullName avatarUrl")
+            .sort({ createdAt: -1 });
+        res.json(teams);
+    } catch (error) {
+        console.error("Error fetching joined teams:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};

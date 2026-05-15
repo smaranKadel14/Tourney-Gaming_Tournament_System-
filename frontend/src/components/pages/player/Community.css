@@ -445,3 +445,64 @@
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Sidebar Teams */
+.sidebar-teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-team-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  background: rgba(30, 41, 59, 0.2);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-team-item:hover {
+  background: rgba(162, 0, 255, 0.1);
+  border-color: rgba(162, 0, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.sidebar-team-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.sidebar-team-logo-placeholder {
+  width: 36px;
+  height: 36px;
+  background: #1e293b;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.sidebar-team-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-team-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.sidebar-team-role {
+  font-size: 0.7rem;
+  color: #a200ff;
+  font-weight: 600;
+  text-transform: uppercase;
+}

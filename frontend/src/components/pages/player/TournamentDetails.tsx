@@ -127,12 +127,12 @@ export default function TournamentDetails() {
              }
 
              if (response.data.teamSize > 1) {
-                const teamsRes = await api.get('/teams', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const captained = teamsRes.data.filter((t: any) => t.captain?._id === user?.id);
-                setUserTeams(captained);
-             }
+                 const teamsRes = await api.get('/teams/my-teams', {
+                     headers: { Authorization: `Bearer ${token}` }
+                 });
+                 // teamsRes.data is now an array of teams where the user is captain
+                 setUserTeams(teamsRes.data);
+              }
           } catch (secondaryErr) {
              console.warn("Could not load registration/team status:", secondaryErr);
           }
@@ -375,19 +375,41 @@ export default function TournamentDetails() {
             <h2>Select Your Team</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>This is a team tournament. Select which team you want to lead into battle.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {userTeams.map(team => (
-                    <button 
-                        key={team._id} 
-                        className={`tm-tab ${selectedTeamId === team._id ? 'tm-tab--active' : ''}`}
-                        style={{ padding: '15px', borderRadius: '10px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '15px', border: '1px solid #334155' }}
-                        onClick={() => setSelectedTeamId(team._id)}
-                    >
-                        <div style={{ width: 40, height: 40, background: '#1e293b', borderRadius: '8px', overflow: 'hidden' }}>
-                            {team.logoUrl && <img src={`http://localhost:5000${team.logoUrl}`} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
-                        </div>
-                        <span style={{ color: 'white', fontWeight: 600 }}>{team.name}</span>
-                    </button>
-                ))}
+                {userTeams.map(team => {
+                    const memberCount = (team as any).members?.length || 0;
+                    const isTooSmall = memberCount < (tournament?.teamSize || 5);
+                    
+                    return (
+                        <button 
+                            key={team._id} 
+                            disabled={isTooSmall}
+                            className={`tm-tab ${selectedTeamId === team._id ? 'tm-tab--active' : ''} ${isTooSmall ? 'tm-tab--disabled' : ''}`}
+                            style={{ 
+                                padding: '15px', 
+                                borderRadius: '10px', 
+                                textAlign: 'left', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '15px', 
+                                border: selectedTeamId === team._id ? '1px solid #a200ff' : '1px solid #334155',
+                                opacity: isTooSmall ? 0.5 : 1,
+                                cursor: isTooSmall ? 'not-allowed' : 'pointer',
+                                background: selectedTeamId === team._id ? 'rgba(162, 0, 255, 0.1)' : '#0f172a'
+                            }}
+                            onClick={() => setSelectedTeamId(team._id)}
+                        >
+                            <div style={{ width: 40, height: 40, background: '#1e293b', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                                {team.logoUrl && <img src={`http://localhost:5000${team.logoUrl}`} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ color: 'white', fontWeight: 600 }}>{team.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: isTooSmall ? '#ef4444' : '#94a3b8' }}>
+                                    {memberCount} / {tournament?.teamSize || 5} Members {isTooSmall && "(Not enough members)"}
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })}
             </div>
             <div className="comm-modal-actions" style={{ marginTop: '2rem' }}>
               <button type="button" className="comm-btn-cancel" onClick={() => setShowTeamModal(false)}>Cancel</button>

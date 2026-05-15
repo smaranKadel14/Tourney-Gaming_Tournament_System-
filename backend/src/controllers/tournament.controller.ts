@@ -119,6 +119,18 @@ export const registerForTournament = async (req: Request, res: Response): Promis
             return;
         }
 
+        // Check team size
+        const team = await Team.findById(teamId);
+        if (!team) {
+            res.status(404).json({ message: "Team not found" });
+            return;
+        }
+
+        if (team.members.length < (tournament.teamSize || 5)) {
+            res.status(400).json({ message: `Your team must have at least ${tournament.teamSize || 5} members to join this tournament.` });
+            return;
+        }
+
         // Create registration
         const registration = await Registration.create({
             user: userId,
@@ -666,6 +678,18 @@ export const initiateEsewaPayment = async (req: Request, res: Response): Promise
 
         if (existingRegistration && existingRegistration.paymentStatus === "completed") {
             res.status(400).json({ message: "Already registered for this tournament" });
+            return;
+        }
+
+        // Check team size
+        const team = await Team.findById(teamId);
+        if (!team) {
+            res.status(404).json({ message: "Team not found" });
+            return;
+        }
+
+        if (team.members.length < (tournament.teamSize || 5)) {
+            res.status(400).json({ message: `Your team must have at least ${tournament.teamSize || 5} members to join this tournament.` });
             return;
         }
 

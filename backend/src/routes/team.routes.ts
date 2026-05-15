@@ -6,11 +6,13 @@ import {
     requestToJoinTeam, 
     handleJoinRequest, 
     getTeamRequests,
+    getMyTeams,
     updateTeam,
     uploadTeamLogo,
     kickMember,
     transferCaptainship,
-    leaveTeam
+    leaveTeam,
+    getJoinedTeams
 } from "../controllers/team.controller";
 import { protect } from "../middleware/auth.middleware";
 import upload from "../middleware/upload";
@@ -18,9 +20,9 @@ import upload from "../middleware/upload";
 const router = express.Router();
 
 router.get("/", getTeams);
+router.get("/my-teams", protect, getMyTeams);
+router.get("/my-joined-teams", protect, getJoinedTeams);
 router.get("/:id", getTeamById);
-
-// Protected routes
 router.post("/", protect, createTeam);
 router.post("/:id/join", protect, requestToJoinTeam);
 router.get("/:id/requests", protect, getTeamRequests);

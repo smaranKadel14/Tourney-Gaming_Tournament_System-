@@ -332,7 +332,7 @@ export default function TeamProfile() {
                                         </div>
                                     </div>
                                     <div style={{ color: '#cbd5e1', fontSize: 14 }}>
-                                        {team.bio || "This team hasn't added a biography yet. Building a legacy, one tournament at a time."}
+                                        {team.bio}
                                     </div>
                                 </>
                             )}

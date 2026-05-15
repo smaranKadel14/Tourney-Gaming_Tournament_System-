@@ -381,6 +381,7 @@ const OrganizerDashboard = () => {
                                   }}
                                 >
                                   <div className="od__barTooltip">{d.value} players</div>
+                                  {d.value > 0 && <span className="od__barValue">{d.value}</span>}
                                 </div>
                                 <span className="od__barLabel">{d.label}</span>
                               </div>

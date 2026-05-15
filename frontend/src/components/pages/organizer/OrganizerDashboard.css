@@ -503,8 +503,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   flex: 1;
+  height: 100%;
 }
 
 .od__bar {
@@ -543,6 +545,17 @@
 
 .od__bar:hover .od__barTooltip {
   opacity: 1;
+}
+
+.od__barValue {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  pointer-events: none;
 }
 
 .od__barLabel {
