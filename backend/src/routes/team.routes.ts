@@ -19,9 +19,9 @@ import upload from "../middleware/upload";
 
 const router = express.Router();
 
-router.get("/", getTeams);
 router.get("/my-teams", protect, getMyTeams);
 router.get("/my-joined-teams", protect, getJoinedTeams);
+router.get("/", getTeams);
 router.get("/:id", getTeamById);
 router.post("/", protect, createTeam);
 router.post("/:id/join", protect, requestToJoinTeam);
