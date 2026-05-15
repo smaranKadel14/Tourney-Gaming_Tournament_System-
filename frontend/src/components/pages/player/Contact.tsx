@@ -2,7 +2,7 @@ import { useState } from "react";
 import PlayerNavbar from "./PlayerNavbar";
 import PlayerFooter from "./PlayerFooter";
 import { api } from "../../../lib/api";
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import "./Contact.css";
 
 // Assets

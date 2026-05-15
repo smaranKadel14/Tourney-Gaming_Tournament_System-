@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "./AdminLayout";
-import { Download, Plus, Edit2, X, Gamepad2, Trophy, Check } from "lucide-react";
+import { Download, Edit2, X, Gamepad2, Trophy, Check } from "lucide-react";
 import { getToken } from "../../../utils/auth";
 import Pagination from "../../common/Pagination";
 import "./AdminDashboard.css"; // Reuse shared styling
@@ -181,11 +181,6 @@ const AdminTournaments = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleCreateTournament = () => {
-    alert("Navigating to Tournament Creation Form...");
-    // Future integration: navigate("/organizer/tournaments/new")
   };
 
   return (

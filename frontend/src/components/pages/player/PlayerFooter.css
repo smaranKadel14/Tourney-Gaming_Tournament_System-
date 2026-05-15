@@ -54,6 +54,7 @@
 .logo-highlight {
   background: linear-gradient(135deg, #a200ff, #00d4ff);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

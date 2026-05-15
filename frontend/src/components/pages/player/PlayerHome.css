@@ -91,6 +91,7 @@
 .ph__title-highlight {
   background: linear-gradient(135deg, #a200ff, #00d4ff);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }
@@ -98,6 +99,7 @@
 .text-gradient {
   background: linear-gradient(135deg, #a200ff, #ff007f);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

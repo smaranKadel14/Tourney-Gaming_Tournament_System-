@@ -611,7 +611,14 @@ export const getTournamentRegistrations = async (req: Request, res: Response): P
 
         const registrations = await Registration.find({ tournament: tournamentId })
             .populate("user", "fullName email avatarUrl")
-            .populate("team", "name logoUrl")
+            .populate({
+                path: "team",
+                select: "name logoUrl members",
+                populate: {
+                    path: "members",
+                    select: "fullName email avatarUrl"
+                }
+            })
             .sort({ createdAt: -1 });
 
         res.json(registrations);
